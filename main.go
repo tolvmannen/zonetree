@@ -32,7 +32,6 @@ func main() {
 	if len(os.Args) > 1 {
 		//domain = dns.Fqdn(os.Args[1])
 		domain = cache.MakeFQDN(os.Args[1])
-		fmt.Printf("FQDN: %s\n", domain)
 		if strings.ToUpper(domain) == "ROOT." {
 			domain = "." // use root if no domain given
 		}
@@ -43,8 +42,6 @@ func main() {
 
 	//ZoneTree, Cache, Log = Init()
 	cfg = cache.Init(&Log, Zones, Cache)
-
-	fmt.Printf("%v\n", &cfg)
 
 	cache.BuildZoneCache(domain, &cfg)
 

@@ -393,13 +393,6 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 
 		cfg.Log.Debug("Starting Server", "nr", i, "NSIP", nsip)
 
-		var test bool
-		test = false
-		if test == true {
-			fmt.Printf("Query: %v\n", q)
-			continue
-		}
-
 		// Dont query IP-addresses of the wrong version if the option to
 		// use only 4 or 6 is set.
 		if cfg.IPv4only && strings.Contains(nsip.IP, ":") {
