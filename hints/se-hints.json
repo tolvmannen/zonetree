@@ -1,0 +1,304 @@
+{
+  "Name": "se.",
+  "NS": [
+    {
+      "Self": 0,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 1,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 2,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 3,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 4,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 5,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 6,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 7,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 8,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    },
+    {
+      "Self": 9,
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "SOA": "",
+      "DNSKEY": null,
+      "RRSIG": null
+    }
+  ],
+  "ParentNS": [
+    {
+      "Name": "k.root-servers.net.",
+      "IP": "193.0.14.129",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "m.root-servers.net.",
+      "IP": "202.12.27.33",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+      ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "a.root-servers.net.",
+      "IP": "198.41.0.4",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "e.root-servers.net.",
+      "IP": "192.203.230.10",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "g.root-servers.net.",
+      "IP": "192.112.36.4",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "h.root-servers.net.",
+      "IP": "198.97.190.53",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "l.root-servers.net.",
+      "IP": "199.7.83.42",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "b.root-servers.net.",
+      "IP": "170.247.170.2",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "c.root-servers.net.",
+      "IP": "192.33.4.12",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "d.root-servers.net.",
+      "IP": "199.7.91.13",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "f.root-servers.net.",
+      "IP": "192.5.5.241",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "i.root-servers.net.",
+      "IP": "192.36.148.17",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    },
+    {
+      "Name": "j.root-servers.net.",
+      "IP": "192.58.128.30",
+      "NS": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ],
+      "DS": [
+        "59407 8 2 67a8e06fcefdd9397f77f26c41ade4ec142f299bcfa1827f0ef8fd87f2f63022"
+      ],
+      "RRSIG": [
+        "43 8 1 86400 1756357200 1755230400 46441 . irOO/LR5w4Jm55uK6SeQ6xoRfgenPrrEaYfrWh2sphuET7mY9l79UjbnRyY+0fT8fsC89Ytl9bgh0+sUO2v7OcPZIScaYaP4dh392i1txwHuQ2TPg26n9UDp8+qOveeaMC0SxD0WPrVMteo8xG3JiM4uzJHABpOgCpbRGYal2mzw2E+o/ieRNEOHgbCqOu6bMA4e4g6esamItvvwa3dhlvK2zsgXOK3YSAWgCPj60v/v9agmDSvecfXSXk+Y4P9M74MBiJNslvSk6Vv/1naagFcewYizQRKJHdvY2gc6n1gnc92se0A5RFWPPZD6PrO1e28ocI1tTaA0pNkxTS5/Gw=="
+      ]
+    }
+  ],
+  "NSIP": [
+    {
+      "Name": "a.ns.se.",
+      "IP": "192.36.144.107"
+    },
+    {
+      "Name": "b.ns.se.",
+      "IP": "192.36.133.107"
+    },
+    {
+      "Name": "c.ns.se.",
+      "IP": "192.36.135.107"
+    },
+    {
+      "Name": "f.ns.se.",
+      "IP": "192.71.53.53"
+    },
+    {
+      "Name": "g.ns.se.",
+      "IP": "130.239.5.114"
+    },
+    {
+      "Name": "i.ns.se.",
+      "IP": "194.146.106.22"
+    },
+    {
+      "Name": "m.ns.se.",
+      "IP": "194.0.11.112"
+    },
+    {
+      "Name": "x.ns.se.",
+      "IP": "213.108.25.4"
+    },
+    {
+      "Name": "y.ns.se.",
+      "IP": "185.159.197.150"
+    },
+    {
+      "Name": "z.ns.se.",
+      "IP": "185.159.198.150"
+    },
+    {
+      "Name": "a.ns.se.",
+      "IP": "2a01:3f0:0:301::53"
+    },
+    {
+      "Name": "b.ns.se.",
+      "IP": "2001:67c:254c:301::53"
+    },
+    {
+      "Name": "c.ns.se.",
+      "IP": "2001:67c:2554:301::53"
+    },
+    {
+      "Name": "f.ns.se.",
+      "IP": "2a01:3f0:0:305::53"
+    },
+    {
+      "Name": "g.ns.se.",
+      "IP": "2001:6b0:e:3::1"
+    },
+    {
+      "Name": "i.ns.se.",
+      "IP": "2001:67c:1010:5::53"
+    },
+    {
+      "Name": "m.ns.se.",
+      "IP": "2001:678:e:112::53"
+    },
+    {
+      "Name": "x.ns.se.",
+      "IP": "2001:67c:124c:e000::4"
+    },
+    {
+      "Name": "y.ns.se.",
+      "IP": "2620:10a:80aa::150"
+    },
+    {
+      "Name": "z.ns.se.",
+      "IP": "2620:10a:80ab::150"
+    }
+  ],
+  "Status": 200
+}
