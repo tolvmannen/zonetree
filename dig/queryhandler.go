@@ -7,20 +7,87 @@ import (
 	"github.com/miekg/dns"
 )
 
-//var log = logger.PrintDebugLog()
+// Setting up some custom structs to more easily
+// handle the data retured from a query
+// Also, removes the dependency on miekg/dns in
+// other parts
+type DigData struct {
+	Rcode         string
+	Answer        []DigRR
+	Authoritative []DigRR
+	Additional    []DigRR
+}
 
-func QueryForDelegation(q Query, log logger.Logger) {
+type DigRR struct {
+	Name   string
+	Rrtype string
+	Ttl    uint32
+	Rdata  []string
+}
+
+// Returnd Rdata as one (1) space separated string
+func (rr *DigRR) GetRdata() string {
+	return strings.Join(rr.Rdata, " ")
+}
+
+// Return Rdata as separate fields
+func (rr *DigRR) GetRdataFields() []string {
+	return rr.Rdata
+}
+
+func GetDelegation(q Query, log logger.Logger) DigData {
+
+	var data DigData
 
 	msg, err := Dig(q)
 	if err != nil {
 		log.Debug("Error looking up domain", "domain", err.Error())
 	}
 
-	rcode := dns.RcodeToString[msg.MsgHdr.Rcode]
+	data.Rcode = dns.RcodeToString[msg.MsgHdr.Rcode]
 
-	if rcode == "NOERROR" {
+	if data.Rcode == "NOERROR" {
 		log.Debug("Got reply", "QNAME", q.Qname, "server", q.Nameserver)
+
+		// Go through all the sections of the response and
+		// sort the right info into the DigData struct
+		for _, au := range msg.Answer {
+			var rr DigRR
+			head := *au.Header()
+			rr.Rrtype = dns.Type(head.Rrtype).String()
+			rr.Name = head.Name
+			rr.Ttl = head.Ttl
+			for i := 1; i <= dns.NumField(au); i++ {
+				rr.Rdata = append(rr.Rdata, dns.Field(au, i))
+			}
+			data.Answer = append(data.Answer, rr)
+		}
+		for _, au := range msg.Ns {
+			var rr DigRR
+			head := *au.Header()
+			rr.Rrtype = dns.Type(head.Rrtype).String()
+			rr.Name = head.Name
+			rr.Ttl = head.Ttl
+			for i := 1; i <= dns.NumField(au); i++ {
+				rr.Rdata = append(rr.Rdata, dns.Field(au, i))
+			}
+			data.Authoritative = append(data.Authoritative, rr)
+		}
+		for _, au := range msg.Extra {
+			var rr DigRR
+			head := *au.Header()
+			rr.Rrtype = dns.Type(head.Rrtype).String()
+			rr.Name = head.Name
+			rr.Ttl = head.Ttl
+			for i := 1; i <= dns.NumField(au); i++ {
+				rr.Rdata = append(rr.Rdata, dns.Field(au, i))
+			}
+			data.Additional = append(data.Additional, rr)
+		}
+
 	}
+
+	return data
 }
 
 func Path(dom string) []string {

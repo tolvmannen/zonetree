@@ -12,18 +12,24 @@ import (
 
 // github.com/google/go-cmp
 
+// Having a laugh with HTTP status code references
 var ZoneStatus = map[int32]string{
-	200: "Zone fully primed",
+	200: "Zone OK",
 	201: "Zone placeholder created",
-	206: "Zone partially primed",
+	204: "Empty non-terminal",
+	206: "Zone incomplete",
+	404: "NXDOMAIN",
 }
 
+// NOTE ParetNamw ia useful in the event of empty non-terminals.
+// Use in particular w status 204
 type Zone struct {
-	Name     string     `json:"Name"`
-	ZoneNS   []ZoneNS   `json:"NS"`       // All NS from all instances of Zone
-	ParentNS []ParentNS `json:"ParentNS"` // All NS from all instances of Delegation NS
-	NSIP     []NSIP     `json:"NSIP"`     // All NS name <-> IP pairs
-	Status   int32      `json:"Status"`
+	Name       string     `json:"Name"`
+	ZoneNS     []ZoneNS   `json:"NS"`         // All NS from all instances of Zone
+	ParentName string     `json:"ParentName"` // Name of the parent zone
+	ParentNS   []ParentNS `json:"ParentNS"`   // All NS from all instances of Delegation NS
+	NSIP       []NSIP     `json:"NSIP"`       // All NS name <-> IP pairs
+	Status     int32      `json:"Status"`
 }
 
 // Struct to hold relevant data for nameservers
@@ -221,16 +227,13 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 					// create placeholder NS struct to put IP in later
 					name := dns.Field(au, 1)
 					// Check if the name is already in the NSIP list of the zone
-					//id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
 					id := slices.IndexFunc(delegns, func(ns NSIP) bool {
 						return ns.Name == name
 					})
 					// If not, create ann entry ad add it
 					if id < 0 {
-						//var parent ParentNS
 						var nsip NSIP
 						nsip.Name = name
-						//z.NSIP = append(z.NSIP, nsip)
 						delegns = append(delegns, nsip)
 
 					}
@@ -262,13 +265,11 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 				if rtype == "A" || rtype == "AAAA" {
 					rdata := dns.Field(e, 1)
 					// check if an identical entry exists
-					//id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
 					id := slices.IndexFunc(delegns, func(ns NSIP) bool {
 						return ns.IP == rdata && ns.Name == head.Name
 					})
 					if id < 0 {
 						// check for entry with name but no IP
-						//id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
 						id := slices.IndexFunc(delegns, func(ns NSIP) bool {
 							return ns.Name == head.Name && ns.IP == ""
 						})
@@ -277,10 +278,8 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 							var nsip NSIP
 							nsip.IP = rdata
 							nsip.Name = head.Name
-							//z.NSIP = append(z.NSIP, nsip)
 							delegns = append(delegns, nsip)
 						} else {
-							//z.NSIP[id].IP = rdata
 							delegns[id].IP = rdata
 						}
 					}
@@ -319,7 +318,6 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 
 					var iplist []string
 					// Check if the name server is in the global cache
-					//iplist, _ = GetServerFromCache(&Cache, e.Name)
 					if server, ok := cfg.Cache.Get(e.Name); ok {
 						cfg.Log.Debug("DELEGATION: Nameserver found in global cache", "Name", e.Name)
 						for _, ip := range server.IP {
@@ -332,7 +330,6 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 						// Cheat and use a resolver to get the IP(s) for the NS name
 						iplist, _ = dig.QndQuery(e.Name, "1.1.1.1", cfg.Log)
 						if len(iplist) > 0 {
-							//AddServerToCache(&Cache, e.Name, iplist)
 							server := Server{IP: iplist}
 							cfg.Cache.Set(e.Name, server)
 						}
@@ -522,7 +519,6 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 				cfg.Log.Debug("IP-list before cache", "list", iplist)
 				if len(iplist) < 1 {
 					cfg.Log.Debug("Making Cache Lookup", "Name", name)
-					//iplist, _ = GetServerFromCache(&Cache, name)
 					if server, ok := cfg.Cache.Get(name); ok {
 						iplist = append(iplist, server.IP...)
 					}
@@ -536,7 +532,6 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 					iplist, _ = dig.QndQuery(name, "1.1.1.1", cfg.Log)
 					// if this succeeds, save server in global cache
 					if len(iplist) > 0 {
-						//AddServerToCache(&Cache, name, iplist)
 						server := Server{IP: iplist}
 						cfg.Cache.Set(name, server)
 					}

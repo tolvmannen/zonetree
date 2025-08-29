@@ -8,22 +8,10 @@ import (
 	"zonetree/logger"
 )
 
-//var Log slog.Logger
-
 var cfg cache.Config
 var Log = logger.PrintDebugLog()
-
-// var ZoneTree cmap.ConcurrentMap[string, Zone]
-// var Zones cache.Map[cache.Zone]
 var Zones = cache.NewZoneCache()
-
-// var Cache = cmap.New[Server]()
-// var Cache cache.Map[cache.Server]
 var Cache = cache.NewServerCache()
-
-//var Opt = logger.Options{IPv4only: true}
-
-//var ZoneTree = cmap.New[Zone]()
 
 func main() {
 
