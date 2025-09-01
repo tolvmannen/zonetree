@@ -19,10 +19,10 @@ type DigData struct {
 }
 
 type DigRR struct {
-	Name   string
-	Rrtype string
-	Ttl    uint32
-	Rdata  []string
+	Name  string
+	Rtype string
+	Ttl   uint32
+	Rdata []string
 }
 
 // Returnd Rdata as one (1) space separated string
@@ -35,13 +35,14 @@ func (rr *DigRR) GetRdataFields() []string {
 	return rr.Rdata
 }
 
-func GetDelegation(q Query, log logger.Logger) DigData {
+func GetDelegation(q Query, log logger.Logger) (DigData, error) {
 
 	var data DigData
 
 	msg, err := Dig(q)
 	if err != nil {
-		log.Debug("Error looking up domain", "domain", err.Error())
+		log.Error("Nameserver reported error looking up domain", "domain", err.Error())
+		return data, err
 	}
 
 	data.Rcode = dns.RcodeToString[msg.MsgHdr.Rcode]
@@ -54,7 +55,7 @@ func GetDelegation(q Query, log logger.Logger) DigData {
 		for _, au := range msg.Answer {
 			var rr DigRR
 			head := *au.Header()
-			rr.Rrtype = dns.Type(head.Rrtype).String()
+			rr.Rtype = dns.Type(head.Rrtype).String()
 			rr.Name = head.Name
 			rr.Ttl = head.Ttl
 			for i := 1; i <= dns.NumField(au); i++ {
@@ -65,7 +66,7 @@ func GetDelegation(q Query, log logger.Logger) DigData {
 		for _, au := range msg.Ns {
 			var rr DigRR
 			head := *au.Header()
-			rr.Rrtype = dns.Type(head.Rrtype).String()
+			rr.Rtype = dns.Type(head.Rrtype).String()
 			rr.Name = head.Name
 			rr.Ttl = head.Ttl
 			for i := 1; i <= dns.NumField(au); i++ {
@@ -76,7 +77,7 @@ func GetDelegation(q Query, log logger.Logger) DigData {
 		for _, au := range msg.Extra {
 			var rr DigRR
 			head := *au.Header()
-			rr.Rrtype = dns.Type(head.Rrtype).String()
+			rr.Rtype = dns.Type(head.Rrtype).String()
 			rr.Name = head.Name
 			rr.Ttl = head.Ttl
 			for i := 1; i <= dns.NumField(au); i++ {
@@ -87,7 +88,7 @@ func GetDelegation(q Query, log logger.Logger) DigData {
 
 	}
 
-	return data
+	return data, err
 }
 
 func Path(dom string) []string {

@@ -182,14 +182,14 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 	for ip, name := range nslist {
 		q.Nameserver = ip
 		cfg.Log.Debug("Parent Query:", "query", q)
-		msg, err := dig.Dig(q)
+		msg, err := dig.GetDelegation(q, cfg.Log)
 		if err != nil {
-			cfg.Log.Error("DELEGATION: Error looking up domain", "domain", err.Error())
+			//cfg.Log.Error("DELEGATION: Error looking up domain", "domain", err.Error())
+			cfg.Log.Debug("Trying next nameserver in list")
+			continue
 		}
 
-		rcode := dns.RcodeToString[msg.MsgHdr.Rcode]
-
-		if rcode == "NOERROR" {
+		if msg.Rcode == "NOERROR" {
 
 			cfg.Log.Debug("DELEGATION: Got reply", "QNAME", q.Qname, "server", q.Nameserver)
 
@@ -217,15 +217,13 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 			// Extract DNSSEC info, if any, and make a list of delegation
 			// Name Servers
 			var delegns []NSIP
-			for _, au := range msg.Ns {
+			for _, au := range msg.Authoritative {
 
-				head := *au.Header()
-				rtype := dns.Type(head.Rrtype).String()
 				// RDATA is in dns.RR.<section>[1:]
-				switch rtype {
+				switch au.Rtype {
 				case "NS":
 					// create placeholder NS struct to put IP in later
-					name := dns.Field(au, 1)
+					name := au.GetRdata()
 					// Check if the name is already in the NSIP list of the zone
 					id := slices.IndexFunc(delegns, func(ns NSIP) bool {
 						return ns.Name == name
@@ -238,19 +236,9 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 
 					}
 				case "DS":
-					var tmp []string
-					for i := 1; i <= dns.NumField(au); i++ {
-						tmp = append(tmp, dns.Field(au, i))
-					}
-					rdata := strings.Join(tmp, " ")
-					z.ParentNS[pid].DS = append(z.ParentNS[pid].DS, rdata)
+					z.ParentNS[pid].DS = append(z.ParentNS[pid].DS, au.GetRdata())
 				case "RRSIG":
-					var tmp []string
-					for i := 1; i <= dns.NumField(au); i++ {
-						tmp = append(tmp, dns.Field(au, i))
-					}
-					rdata := strings.Join(tmp, " ")
-					z.ParentNS[pid].RRSIG = append(z.ParentNS[pid].RRSIG, rdata)
+					z.ParentNS[pid].RRSIG = append(z.ParentNS[pid].RRSIG, au.GetRdata())
 				default:
 				}
 
@@ -258,29 +246,27 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 
 			// Get all glue that is provided, but dont trust it to be complete.
 			// This will save a few lookups further on
-			for _, e := range msg.Extra {
-				head := *e.Header()
-				rtype := dns.Type(head.Rrtype).String()
+			for _, e := range msg.Additional {
 				// RDATA is in dns.RR.<section>[1:]
-				if rtype == "A" || rtype == "AAAA" {
-					rdata := dns.Field(e, 1)
+				if e.Rtype == "A" || e.Rtype == "AAAA" {
+					//rdata := e.GetRdata()
 					// check if an identical entry exists
 					id := slices.IndexFunc(delegns, func(ns NSIP) bool {
-						return ns.IP == rdata && ns.Name == head.Name
+						return ns.IP == e.GetRdata() && ns.Name == e.Name
 					})
 					if id < 0 {
 						// check for entry with name but no IP
 						id := slices.IndexFunc(delegns, func(ns NSIP) bool {
-							return ns.Name == head.Name && ns.IP == ""
+							return ns.Name == e.Name && ns.IP == ""
 						})
 
 						if id < 0 {
 							var nsip NSIP
-							nsip.IP = rdata
-							nsip.Name = head.Name
+							nsip.IP = e.GetRdata()
+							nsip.Name = e.Name
 							delegns = append(delegns, nsip)
 						} else {
-							delegns[id].IP = rdata
+							delegns[id].IP = e.GetRdata()
 						}
 					}
 

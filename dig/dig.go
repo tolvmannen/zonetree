@@ -91,12 +91,21 @@ func Dig(query Query) (dns.Msg, error) {
 	//response, rtt, err := client.Exchange(message, nameserver)
 	response, _, err := client.Exchange(message, nameserver)
 
-	// maybe not panic here
-	/*
-		if err != nil {
-			panic(err)
-		}
-	*/
+	if err != nil {
+		// we panic here for now
+		panic(err)
+		/*
+			// Craft a placeholder responde here instead of panicking,
+			// just to avoid nil pointer reference.
+			response = &dns.Msg{
+				MsgHdr: dns.MsgHdr{
+					Opcode: dns.OpcodeQuery,
+					Rcode:  dns.RcodeServerFailure,
+				},
+				Question: make([]dns.Question, 1),
+			}
+		*/
+	}
 
 	/*
 		msgSize := response.Len()
@@ -119,6 +128,7 @@ func Dig(query Query) (dns.Msg, error) {
 		nocryptoMsg(response)
 	}
 
+	//return *response, err
 	return *response, err
 }
 
