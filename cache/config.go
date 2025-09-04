@@ -72,13 +72,15 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 		cfg.Log.Debug("Error doing QueryParentForDelegation()", "ERROR", err)
 	}
 
+	// Check if the Zone exists, is an actual zone or if it is a hostname/empty non-terminal
+
 	// Populate the zones nameserver info
 	err = zone.QuerySelfForNS(cfg)
 	if err != nil {
 		cfg.Log.Debug("Error doing QuerySelfForNS()", "ERROR", err)
 	}
 
-	zone.Status = 200
+	//zone.Status = 200
 
 	return zone, err
 
@@ -88,19 +90,25 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 func Nameservers(ZoneName string, cfg *Config) (map[string]string, error) {
 	// Try to get the parent zone from cache
 	cfg.Log.Debug("Loading zone", "zone", ZoneName)
-	//	for z := range cfg.Zones.IterBuffered() {
-	//		fmt.Printf("Printing cache%v\n", z)
-	//	}
+
 	if pzone, ok := cfg.Zones.Get(ZoneName); ok {
 		cfg.Log.Debug("Parent zone found", "zone", ZoneName)
 
-		// Status check, just for logging
-		if pzone.Status == 200 {
+		switch pzone.Status {
+		case 200:
+			// All is going smoothly
 			cfg.Log.Debug("Zone ready", "zone", pzone.Name, "status", strconv.FormatInt(int64(pzone.Status), 10))
-		} else {
-
-			cfg.Log.Debug("Parent zone not ready", "zone", pzone.Name, "status", strconv.FormatInt(int64(pzone.Status), 10))
+		case 204:
+			// Not a proper zone. Find out the TrueParentZone
+			cfg.Log.Debug("Not a proper zone", "zone", pzone.Name, "status", strconv.FormatInt(int64(pzone.Status), 10))
+			cfg.Log.Debug("Trying to get data from True Parent Zone", "TPZ", pzone.InZone)
+			if tpz, ok := cfg.Zones.Get(pzone.InZone); ok {
+				pzone = tpz
+			}
+		default:
+			cfg.Log.Debug("Fell through to default in switch @ func Namesevsers()", "status", strconv.FormatInt(int64(pzone.Status), 10))
 		}
+
 		// Return set of NS, if in there are any
 		if cfg.IPv4only {
 			return pzone.GetNSIP4(), nil

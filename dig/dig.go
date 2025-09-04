@@ -93,18 +93,18 @@ func Dig(query Query) (dns.Msg, error) {
 
 	if err != nil {
 		// we panic here for now
-		panic(err)
 		/*
-			// Craft a placeholder responde here instead of panicking,
-			// just to avoid nil pointer reference.
-			response = &dns.Msg{
-				MsgHdr: dns.MsgHdr{
-					Opcode: dns.OpcodeQuery,
-					Rcode:  dns.RcodeServerFailure,
-				},
-				Question: make([]dns.Question, 1),
-			}
+			panic(err)
 		*/
+		// Craft a placeholder responde here instead of panicking,
+		// just to avoid nil pointer reference.
+		response = &dns.Msg{
+			MsgHdr: dns.MsgHdr{
+				Opcode: dns.OpcodeQuery,
+				Rcode:  dns.RcodeServerFailure,
+			},
+			Question: make([]dns.Question, 1),
+		}
 	}
 
 	/*

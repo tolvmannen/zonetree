@@ -13,6 +13,12 @@ import (
 // other parts
 type DigData struct {
 	Rcode         string
+	AA            bool
+	AD            bool
+	RD            bool
+	RA            bool
+	TC            bool
+	DO            bool
 	Answer        []DigRR
 	Authoritative []DigRR
 	Additional    []DigRR
@@ -46,6 +52,11 @@ func GetDelegation(q Query, log logger.Logger) (DigData, error) {
 	}
 
 	data.Rcode = dns.RcodeToString[msg.MsgHdr.Rcode]
+	data.AA = msg.MsgHdr.Authoritative
+	data.AD = msg.MsgHdr.AuthenticatedData
+	data.TC = msg.MsgHdr.Truncated
+	data.RD = msg.MsgHdr.RecursionDesired
+	data.RA = msg.MsgHdr.RecursionAvailable
 
 	if data.Rcode == "NOERROR" {
 		log.Debug("Got reply", "QNAME", q.Qname, "server", q.Nameserver)
@@ -87,6 +98,8 @@ func GetDelegation(q Query, log logger.Logger) (DigData, error) {
 		}
 
 	}
+
+	//log.Debug(" -- this is what the Reply MSG looks like --", "MSG", data)
 
 	return data, err
 }
