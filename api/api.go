@@ -54,6 +54,7 @@ func Run() {
 		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
 
 	})
+
 	router.GET("/cache/list/*zone", func(c *gin.Context) {
 		// trim any leading slash (applies when no 'name' is provided)
 		zone := strings.TrimLeft(c.Param("zone"), "/")

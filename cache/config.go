@@ -2,16 +2,18 @@ package cache
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"zonetree/logger"
 )
 
 type Config struct {
-	Log      logger.Logger
-	Zones    Map[Zone]
-	Cache    Map[Server]
-	IPv4only bool `json:"IPv4only"`
-	IPv6only bool `json:"IPv6only"`
+	Log          logger.Logger
+	Zones        Map[Zone]
+	Cache        Map[Server]
+	IPv4only     bool     `json:"IPv4only"`
+	IPv6only     bool     `json:"IPv6only"`
+	ResolverList []string `json:"ResolverList"`
 	//Opt   Options
 }
 
@@ -31,8 +33,14 @@ func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
 	root.Preload("root-hints.json")
 	conf.Zones.Set(".", root)
 
+	conf.ResolverList = []string{"1.1.1.1", "8.8.8.8", "8.8.4.4", "9.9.9.9"}
+
 	return conf
 
+}
+
+func (c *Config) GetResolver() string {
+	return c.ResolverList[rand.Intn(len(c.ResolverList))]
 }
 
 // if full is true every NS in delegation will be asked for zone
@@ -62,6 +70,7 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 	// remove leftmost label to get name of parent zone
 	parentZoneName := StripLabelFromLeft(zone.Name)
 	nslist, err := Nameservers(parentZoneName, cfg)
+
 	if err != nil {
 		return zone, err
 	}
@@ -112,6 +121,7 @@ func Nameservers(ZoneName string, cfg *Config) (map[string]string, error) {
 		// Return set of NS, if in there are any
 		if cfg.IPv4only {
 			return pzone.GetNSIP4(), nil
+			cfg.Log.Debug("LIST", "IPv4", pzone.GetNSIP4())
 		}
 		if cfg.IPv4only {
 			return pzone.GetNSIP6(), nil
