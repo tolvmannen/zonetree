@@ -21,8 +21,8 @@ var ZoneStatus = map[int32]string{
 	207: "Zone OK-ish?",    // Multi-Status - No consensus on status
 	403: "REFUSED",
 	404: "NXDOMAIN",
-	420: "I'm hallucinating", // What even is this?
-	422: "Unable to comply",  // Unprocessable. Most likely disallowed due to Config option.
+	420: "Just say no",      // What even is this?
+	422: "Unable to comply", // Unprocessable. Most likely disallowed due to Config option.
 	500: "Server error",
 }
 
@@ -107,47 +107,86 @@ func (z *Zone) GetNSIP6() map[string]string {
 	return nsset
 }
 
-/*
-// Check if all parent nameservers are in agreement of the status of the
-// child zone
-func (z *Zone) ChildStatusConsensus() bool {
-	cs := make(map[int]int) // map[status]counter
+func (z *Zone) CalcZoneStatus() int32 {
+	cs := make(map[int]int32) // map[status]counter
 	for _, p := range z.ParentNS {
 		cs[int(p.ChildStatus)]++
 	}
-	// if there is exactly one status, all servers are in agreement
-	// return true and the agreed upon status
-	if len(cs) == 1 {
-		return true
-	}
-	return false
-}
-*/
 
+	fmt.Printf("PARENTS STATUS FOR %s: %v\n", z.Name, cs)
+
+	// In case of mixed statuses:
+	// Set the _least_ broken status
+	if _, ok := cs[200]; ok {
+		return 200
+	}
+
+	if _, ok := cs[204]; ok {
+		return 204
+	}
+
+	if _, ok := cs[403]; ok {
+		return 403
+	}
+
+	if _, ok := cs[404]; ok {
+		return 404
+	}
+
+	// Fallback to 420 if something have gone wronk
+	return 420
+}
+
+/*
+ */
+
+// BuildZoneCache
+//
+// Iterativly go through the DNS tree and build up:
+// 1. a Zone cache for the different DNS nodes.
+// 2. a globar Server cache with lookup info, mainly for batch use
+// Keeping them separate should help with r/w access.
 func BuildZoneCache(z string, cfg *Config) {
 
 	// If asked to check . (i.e. ROOT zone)
-	// do nothing 4 now
+	// do nothing, since the ROOT zone is already
+	// primed, or nothing will work...
 	if z == "." {
 		return
 	}
-	// Make DNS tree list
+	// Make DNS tree list to iterate through
 	list := dig.Path(z)
 
 	// Loop through the nodes and perp the zone.
-	// Will start at TLD, because ROOT should already be primed,
-	// or the program would have blown up by now.
+	// Will start at TLD, because ROOT should already be primed.
 	for _, node := range list {
 		// If not specifically checking a tld, don't query ALL the root servers
 		// for TLD delegation
 		zone, err := PrepZone(node, cfg)
-		//zone, err := MockZone(node, full)
 
 		if err != nil {
 			cfg.Log.Error("Error preparing zone", "zone", node, "Error", err)
 		}
 		cfg.Zones.Set(node, zone)
 	}
+
+}
+
+// MoonWalk
+//
+// Walk backwards and return a list of zones, skipping empty non-terminals
+func (c *Config) MoonWalk(z string) []string {
+
+	var hops []string
+
+	if zone, ok := c.Zones.Get(z); ok {
+		if zone.InZone != "." {
+			hops = append(hops, c.MoonWalk(zone.InZone)...)
+		}
+		//hops = append(hops, zone.InZone)
+	}
+
+	return hops
 
 }
 
@@ -160,6 +199,15 @@ func DelegationInBailiwick(nsname, dom string) bool {
 		return true
 	}
 	return false
+}
+
+func (z *Zone) GetNS() {
+	// Return the first usable nameserver out of the NS list
+	for _, ref := range z.ZoneNS {
+		if z.NSIP[ref.Self].ZoneStatus == 200 {
+
+		}
+	}
 }
 
 func (z Zone) Print() {
@@ -407,11 +455,19 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 		}
 	}
 
-	// If the zone was created (201), update status reflect that ParenNS is populated
-	// If another status has been set, keep that.
-	if z.Status == 201 {
-		z.Status = 206 // Partially Primed zone
+	status := z.CalcZoneStatus()
+
+	// If the parent zone has no info about the child zone
+	// i.e. 420 it is (most likely) not a proper zone
+	// re-use parents status for the child zone
+	if status == 420 {
+		if pz, ok := cfg.Zones.Get(StripLabelFromLeft(z.Name)); ok {
+			cfg.Log.Debug("Not proper zone. Re-using status from parent", "Zone", z.Name, "Parent Zone Status", status)
+			status = pz.Status
+		}
 	}
+
+	z.Status = status
 
 	return nil
 }
@@ -506,6 +562,12 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 				if an.Rtype == "NS" {
 					nsrr = append(nsrr, an.GetRdata())
 				}
+			}
+
+			// check if Zone cut is current zone
+			if len(msg.Answer) > 0 {
+				cfg.Log.Debug("Zone Cut", "@", z.Name)
+				z.InZone = z.Name
 			}
 
 			// Get all glue that is provided, but dont trust it to be complete.

@@ -89,8 +89,6 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 		cfg.Log.Debug("Error doing QuerySelfForNS()", "ERROR", err)
 	}
 
-	//zone.Status = 200
-
 	return zone, err
 
 }
@@ -101,7 +99,7 @@ func Nameservers(ZoneName string, cfg *Config) (map[string]string, error) {
 	cfg.Log.Debug("Loading zone", "zone", ZoneName)
 
 	if pzone, ok := cfg.Zones.Get(ZoneName); ok {
-		cfg.Log.Debug("Parent zone found", "zone", ZoneName)
+		cfg.Log.Debug("Parent zone found", "zone", ZoneName, "status", pzone.Status)
 
 		switch pzone.Status {
 		case 200:
@@ -121,7 +119,6 @@ func Nameservers(ZoneName string, cfg *Config) (map[string]string, error) {
 		// Return set of NS, if in there are any
 		if cfg.IPv4only {
 			return pzone.GetNSIP4(), nil
-			cfg.Log.Debug("LIST", "IPv4", pzone.GetNSIP4())
 		}
 		if cfg.IPv4only {
 			return pzone.GetNSIP6(), nil
