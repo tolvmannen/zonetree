@@ -14,12 +14,23 @@ type Config struct {
 	IPv4only     bool     `json:"IPv4only"`
 	IPv6only     bool     `json:"IPv6only"`
 	ResolverList []string `json:"ResolverList"`
-	//Opt   Options
+	Opt          Options  `json:"Opt"`
 }
 
 type Options struct {
 	IPv4only bool `json:"IPv4only"`
 	IPv6only bool `json:"IPv6only"`
+
+	// There are a number of ways of doing lookups using Query Minimization
+	// Some nameservers use differnt sequences for adding labels
+	// Usually the first two (tld, sld) are added 1 by 1.
+	// To save on DNS queries, further labels may be added in multiples
+	// I.e. 1,1,1,2,2,2,3,3,3... 1,1,1,1,1,1,1... 1,1,3,3,3,3,3... etc
+	// All the Qmin-options deal with the Qmin lookup behaviour
+	QminSubtractCache bool   `json:"QminSubtractCache"` // Count down on cache hits.
+	QminLabelSequence []int8 `json:"QminLabelSequence"` // The number of labels to add, in sequence.
+	QminStrict        bool   `json:"QminStrict"`        // If true, abort on fail rather than falling back to using the full domain name.
+	QminFirstPath     bool   `json:"QminFirstPath"`     // If true, continue to next label after first successful lookup.
 }
 
 func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
@@ -69,7 +80,8 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 	// Get a list of the parent zone nameservers to query for delegation data
 	// remove leftmost label to get name of parent zone
 	parentZoneName := StripLabelFromLeft(zone.Name)
-	nslist, err := Nameservers(parentZoneName, cfg)
+	nslist, zonecut, err := Nameservers(parentZoneName, cfg)
+	zone.ZoneCut = zonecut
 
 	if err != nil {
 		return zone, err
@@ -94,40 +106,52 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 }
 
 // Move to Zones
-func Nameservers(ZoneName string, cfg *Config) (map[string]string, error) {
-	// Try to get the parent zone from cache
+func Nameservers(ZoneName string, cfg *Config) (map[string]string, string, error) {
+	// Try to get the zone from cache
 	cfg.Log.Debug("Loading zone", "zone", ZoneName)
 
-	if pzone, ok := cfg.Zones.Get(ZoneName); ok {
-		cfg.Log.Debug("Parent zone found", "zone", ZoneName, "status", pzone.Status)
+	// Function returns ZoneCut to make further processing easier.
+	var zc string
 
-		switch pzone.Status {
+	if zone, ok := cfg.Zones.Get(ZoneName); ok {
+		cfg.Log.Debug("Parent zone found in cache", "zone", ZoneName, "status", zone.Status)
+
+		switch zone.Status {
 		case 200:
 			// All is going smoothly
-			cfg.Log.Debug("Zone ready", "zone", pzone.Name, "status", strconv.FormatInt(int64(pzone.Status), 10))
+			cfg.Log.Debug("Zone ready", "zone", zone.Name, "status", strconv.FormatInt(int64(zone.Status), 10))
 		case 204:
-			// Not a proper zone. Find out the TrueParentZone
-			cfg.Log.Debug("Not a proper zone", "zone", pzone.Name, "status", strconv.FormatInt(int64(pzone.Status), 10))
-			cfg.Log.Debug("Trying to get data from True Parent Zone", "TPZ", pzone.InZone)
-			if tpz, ok := cfg.Zones.Get(pzone.InZone); ok {
-				pzone = tpz
+			// Not a proper zone. Check ZoneCut
+			cfg.Log.Debug("Not a proper zone", "zone", zone.Name, "status", strconv.FormatInt(int64(zone.Status), 10))
+			cfg.Log.Debug("Trying to get data from Parent Zone derived from ZoneCut", "ZoneCut", zone.ZoneCut)
+			if tpz, ok := cfg.Zones.Get(zone.ZoneCut); ok {
+				zone = tpz
+			}
+		case 404:
+			// Not a proper zone. Check ZoneCut
+			cfg.Log.Debug("NXDOMAIN", "zone", zone.Name, "status", strconv.FormatInt(int64(zone.Status), 10))
+			cfg.Log.Debug("Inherit ZoneCut from closest label", "ZoneCut", zone.ZoneCut)
+			if tpz, ok := cfg.Zones.Get(zone.ZoneCut); ok {
+				zone = tpz
 			}
 		default:
-			cfg.Log.Debug("Fell through to default in switch @ func Namesevsers()", "status", strconv.FormatInt(int64(pzone.Status), 10))
+			cfg.Log.Debug("Fell through to default in switch @ func Namesevsers()", "status", strconv.FormatInt(int64(zone.Status), 10))
 		}
+
+		zc = zone.ZoneCut
 
 		// Return set of NS, if in there are any
 		if cfg.IPv4only {
-			return pzone.GetNSIP4(), nil
+			return zone.GetNSIP4(), zc, nil
 		}
 		if cfg.IPv4only {
-			return pzone.GetNSIP6(), nil
+			return zone.GetNSIP6(), zc, nil
 		}
 
-		return pzone.GetNSIP(), nil
+		return zone.GetNSIP(), zc, nil
 
 	}
 
-	return map[string]string{}, fmt.Errorf("Cache not properly prepared")
+	return map[string]string{}, "", fmt.Errorf("Function Nameservers() exploded trying to get nameservers for %s\n", ZoneName)
 
 }

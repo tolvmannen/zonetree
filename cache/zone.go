@@ -32,7 +32,7 @@ var ZoneStatus = map[int32]string{
 type Zone struct {
 	Name     string     `json:"Name"`     // Name of the Zone
 	ZoneNS   []ZoneNS   `json:"NS"`       // All NS from all instances of the Authoritative name servers
-	InZone   string     `json:"InZone"`   // Zone the record belongs to (in case of hosts and empty non-terminals)
+	ZoneCut  string     `json:"ZoneCut"`  // Zone the record belongs to (in case of hosts and empty non-terminals)
 	ParentNS []ParentNS `json:"ParentNS"` // All NS in all instances from the name servers of the Parent Zone (i.e. delegations)
 	NSIP     []NSIP     `json:"NSIP"`     // All NS Name <-> IP pairs found in both delegation and in Authoritative name servers
 	Status   int32      `json:"Status"`   // See ZoneStatus
@@ -160,8 +160,7 @@ func BuildZoneCache(z string, cfg *Config) {
 	// Loop through the nodes and perp the zone.
 	// Will start at TLD, because ROOT should already be primed.
 	for _, node := range list {
-		// If not specifically checking a tld, don't query ALL the root servers
-		// for TLD delegation
+
 		zone, err := PrepZone(node, cfg)
 
 		if err != nil {
@@ -180,10 +179,10 @@ func (c *Config) MoonWalk(z string) []string {
 	var hops []string
 
 	if zone, ok := c.Zones.Get(z); ok {
-		if zone.InZone != "." {
-			hops = append(hops, c.MoonWalk(zone.InZone)...)
+		if zone.ZoneCut != "." {
+			hops = append(hops, c.MoonWalk(zone.ZoneCut)...)
 		}
-		//hops = append(hops, zone.InZone)
+		//hops = append(hops, zone.ZoneCut)
 	}
 
 	return hops
@@ -327,7 +326,7 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 					// Set statuses accordingly and make a note of true parent zone
 					z.ParentNS[pid].ChildStatus = 204
 					z.Status = 204
-					z.InZone = au.Name
+					z.ZoneCut = au.Name
 					cfg.Log.Debug("[Parent] reported [Name] to be a part of [Zone]", "Parent", q.Nameserver, "Name", q.Qname, "Zone", au.Name)
 
 				default:
@@ -459,7 +458,7 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 
 	// If the parent zone has no info about the child zone
 	// i.e. 420 it is (most likely) not a proper zone
-	// re-use parents status for the child zone
+	// Re-use parents status for the child zone
 	if status == 420 {
 		if pz, ok := cfg.Zones.Get(StripLabelFromLeft(z.Name)); ok {
 			cfg.Log.Debug("Not proper zone. Re-using status from parent", "Zone", z.Name, "Parent Zone Status", status)
@@ -472,7 +471,10 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 	return nil
 }
 
-// Query all nameservers that we've found in delegations form paretn nameservers.
+// QuerySelfForNS
+//
+// Queries all nameservers that we've found in delegations from parent nameservers.
+// to complete the list of nameservers (if needed) and add references to them-
 func (z *Zone) QuerySelfForNS(cfg *Config) error {
 
 	q := dig.NewQuery()
@@ -510,15 +512,6 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 			continue
 		}
 
-		/*
-			msg, err := dig.Dig(q)
-			if err != nil {
-				cfg.Log.Error("Error looking up domain", "domain", err.Error())
-			}
-
-			rcode := dns.RcodeToString[msg.MsgHdr.Rcode]
-		*/
-
 		rcode := msg.Rcode
 
 		if rcode == "NOERROR" {
@@ -532,8 +525,6 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 				cfg.Log.Debug("Got NON-AUTHORITATIVE reply. Proceeding to next server", "QNAME", q.Qname, "server", q.Nameserver)
 				continue
 			}
-
-			cfg.Log.Debug("Got reply", "QNAME", q.Qname, "server", q.Nameserver)
 
 			if len(msg.Answer) < 1 {
 				cfg.Log.Debug("Answer section empty")
@@ -554,7 +545,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 
 			// nameservers in NS section
 			// This will be used to get IP addresses for nameservers
-			// Not found in glue and/or not in bailiwick
+			// not found in glue / not in bailiwick
 			var nsrr []string
 			for _, an := range msg.Answer {
 
@@ -567,7 +558,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 			// check if Zone cut is current zone
 			if len(msg.Answer) > 0 {
 				cfg.Log.Debug("Zone Cut", "@", z.Name)
-				z.InZone = z.Name
+				z.ZoneCut = z.Name
 			}
 
 			// Get all glue that is provided, but dont trust it to be complete.

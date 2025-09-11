@@ -59,7 +59,7 @@ func Run() {
 		// trim any leading slash (applies when no 'name' is provided)
 		zone := strings.TrimLeft(c.Param("zone"), "/")
 		if zone != "" {
-			zone = cache.MakeFQDN(zone)
+			zone = cache.MakeFQDN(strings.ToLower(zone))
 		}
 
 		// default outstr if nothing returned from cache
@@ -75,7 +75,7 @@ func Run() {
 
 	router.GET("/test/*zone", func(c *gin.Context) {
 		// trim any leading slash (applies when no 'name' is provided)
-		zone := strings.TrimLeft(c.Param("zone"), "/")
+		zone := strings.ToLower(strings.TrimLeft(c.Param("zone"), "/"))
 
 		cache.BuildZoneCache(zone, &cfg)
 
