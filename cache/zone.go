@@ -113,8 +113,6 @@ func (z *Zone) CalcZoneStatus() int32 {
 		cs[int(p.ChildStatus)]++
 	}
 
-	fmt.Printf("PARENTS STATUS FOR %s: %v\n", z.Name, cs)
-
 	// In case of mixed statuses:
 	// Set the _least_ broken status
 	if _, ok := cs[200]; ok {
@@ -490,7 +488,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 
 		// Dont query IP-addresses of the wrong version if the option to
 		// use only 4 or 6 is set.
-		if cfg.IPv4only && strings.Contains(nsip.IP, ":") {
+		if cfg.Opt.IPv4only && strings.Contains(nsip.IP, ":") {
 			cfg.Log.Debug("IPv4 only. Ignoring address).", "IP", nsip.IP)
 			z.NSIP[i].ZoneStatus = 422 // won't do the v6 for conf reasons
 			continue

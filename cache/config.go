@@ -2,7 +2,7 @@ package cache
 
 import (
 	"fmt"
-	"math/rand"
+	//"math/rand"
 	"strconv"
 	"zonetree/logger"
 )
@@ -18,8 +18,9 @@ type Config struct {
 }
 
 type Options struct {
-	IPv4only bool `json:"IPv4only"`
-	IPv6only bool `json:"IPv6only"`
+	IPv4only     bool     `json:"IPv4only"`
+	IPv6only     bool     `json:"IPv6only"`
+	ResolverList []string `json:"ResolverList"`
 
 	// There are a number of ways of doing lookups using Query Minimization
 	// Some nameservers use differnt sequences for adding labels
@@ -38,20 +39,35 @@ func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
 	conf.Log = log
 	conf.Zones = zc
 	conf.Cache = sc
-	conf.IPv4only = true
 
 	var root Zone
 	root.Preload("root-hints.json")
 	conf.Zones.Set(".", root)
 
-	conf.ResolverList = []string{"1.1.1.1", "8.8.8.8", "8.8.4.4", "9.9.9.9"}
+	conf.DefaultOptions()
+
+	//conf.ResolverList = []string{"1.1.1.1", "8.8.8.8", "8.8.4.4", "9.9.9.9"}
+	//conf.IPv4only = true
 
 	return conf
 
 }
 
+func (c *Config) DefaultOptions() {
+	c.Opt = Options{
+		IPv4only:          true,
+		IPv6only:          false,
+		QminSubtractCache: true,
+		QminLabelSequence: []int8{1}, // No shortcuts.
+		QminStrict:        false,
+		QminFirstPath:     false,
+		ResolverList:      []string{"1.1.1.1", "8.8.8.8", "8.8.4.4", "9.9.9.9"},
+	}
+
+}
 func (c *Config) GetResolver() string {
-	return c.ResolverList[rand.Intn(len(c.ResolverList))]
+	//return c.Opt.ResolverList[rand.Intn(len(c.ResolverList))]
+	return "1.1.1.1"
 }
 
 // if full is true every NS in delegation will be asked for zone
@@ -141,10 +157,10 @@ func Nameservers(ZoneName string, cfg *Config) (map[string]string, string, error
 		zc = zone.ZoneCut
 
 		// Return set of NS, if in there are any
-		if cfg.IPv4only {
+		if cfg.Opt.IPv4only {
 			return zone.GetNSIP4(), zc, nil
 		}
-		if cfg.IPv4only {
+		if cfg.Opt.IPv6only {
 			return zone.GetNSIP6(), zc, nil
 		}
 
