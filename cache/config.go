@@ -2,7 +2,7 @@ package cache
 
 import (
 	"fmt"
-	//"math/rand"
+	"math/rand/v2"
 	"strconv"
 	"zonetree/logger"
 )
@@ -66,7 +66,11 @@ func (c *Config) DefaultOptions() {
 
 }
 func (c *Config) GetResolver() string {
-	//return c.Opt.ResolverList[rand.Intn(len(c.ResolverList))]
+	if len(c.Opt.ResolverList) > 0 {
+		return c.Opt.ResolverList[rand.IntN(len(c.Opt.ResolverList))]
+	}
+
+	// TODO Move this to a default const
 	return "1.1.1.1"
 }
 

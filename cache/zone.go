@@ -167,24 +167,43 @@ func BuildZoneCache(z string, cfg *Config) {
 		cfg.Zones.Set(node, zone)
 	}
 
+	tree := cfg.ZoneCutPath(list)
+
+	fmt.Printf("\n\nLIST: %v\n\n", list)
+	fmt.Printf("\n\nTREE: %v\n\n", tree)
+
 }
 
-// MoonWalk
+// Reverse Slice
 //
-// Walk backwards and return a list of zones, skipping empty non-terminals
-func (c *Config) MoonWalk(z string) []string {
+// Help function to reverse a slice. Benri for reversing order of a zone tree.
+func ReverseSlice[T comparable](s []T) []T {
+	var r []T
+	for i := len(s) - 1; i >= 0; i-- {
+		r = append(r, s[i])
+	}
+	return r
+}
 
-	var hops []string
+// ZoneCutPath
+//
+// Filter out host names and empty non-terminals to get a list
+// of all zones at the zone cuts.
+func (c *Config) ZoneCutPath(list []string) []string {
 
-	if zone, ok := c.Zones.Get(z); ok {
-		if zone.ZoneCut != "." {
-			hops = append(hops, c.MoonWalk(zone.ZoneCut)...)
+	var zonelist []string
+
+	// Walk the list back to front and check for zone cuts
+	for i := len(list) - 1; i >= 0; i-- {
+		if zone, ok := c.Zones.Get(list[i]); ok {
+			if zone.ZoneCut == list[i] {
+				// prepent result to list in order to preserve the order
+				zonelist = append([]string{list[i]}, zonelist...)
+			}
 		}
-		//hops = append(hops, zone.ZoneCut)
 	}
 
-	return hops
-
+	return zonelist
 }
 
 // func (z *Zone) DelegationInBailiwick(ns string) bool {
@@ -449,6 +468,16 @@ func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) e
 			// If the the parent NS refuses to answer
 			// set status accordingly
 			z.ParentNS[pid].ChildStatus = 403
+		}
+
+		// If the QminFirstPath option is set, check if there is enough info to
+		// continue without goung through the rest of the nameservers.
+		if cfg.Opt.QminFirstPath {
+			// Acceptable statuses are 200 (ok) and 204 (n.e.t)
+			if z.ParentNS[pid].ChildStatus == 200 || z.ParentNS[pid].ChildStatus == 204 {
+				cfg.Log.Debug("Taking first available path.", "Status", z.ParentNS[pid].ChildStatus)
+				break
+			}
 		}
 	}
 

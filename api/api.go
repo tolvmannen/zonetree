@@ -55,6 +55,24 @@ func Run() {
 
 	})
 
+	router.GET("/cache/tree/*zone", func(c *gin.Context) {
+		// trim any leading slash (applies when no 'name' is provided)
+		zone := strings.TrimLeft(c.Param("zone"), "/")
+		if zone != "" {
+			zone = cache.MakeFQDN(strings.ToLower(zone))
+		}
+
+		// default outstr if nothing returned from cache
+		outstr := "Zone not in cache:[" + zone + "]\n"
+
+		if z, ok := Zones.Get(zone); ok {
+			outstr, _ = z.ToPrettyJson()
+		}
+
+		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+
+	})
+
 	router.GET("/cache/list/*zone", func(c *gin.Context) {
 		// trim any leading slash (applies when no 'name' is provided)
 		zone := strings.TrimLeft(c.Param("zone"), "/")
