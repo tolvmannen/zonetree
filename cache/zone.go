@@ -78,7 +78,10 @@ type Server struct {
 	IP []string `json:"IP"`
 }
 
-// Get the self referenced entries from the NSIP list for the Zone
+// GetNSIP
+//
+// Get ALL entries from the NSIP list for the zone
+// corresponding to the NS record set
 func (z *Zone) GetNSIP() map[string]string {
 	var nsset = make(map[string]string)
 	for _, i := range z.ZoneNS {
@@ -87,6 +90,10 @@ func (z *Zone) GetNSIP() map[string]string {
 	return nsset
 }
 
+// GetNSIP4
+//
+// Get all IPv4 entries from the NSIP list for the zone
+// corresponding to the NS record set
 func (z *Zone) GetNSIP4() map[string]string {
 	var nsset = make(map[string]string)
 	for _, i := range z.ZoneNS {
@@ -97,6 +104,10 @@ func (z *Zone) GetNSIP4() map[string]string {
 	return nsset
 }
 
+// GetNSIP6
+//
+// Get all IPv6 entries from the NSIP list for the zone
+// corresponding to the NS record set
 func (z *Zone) GetNSIP6() map[string]string {
 	var nsset = make(map[string]string)
 	for _, i := range z.ZoneNS {
@@ -107,14 +118,16 @@ func (z *Zone) GetNSIP6() map[string]string {
 	return nsset
 }
 
+// CalcZoneStatus
+//
+// Return the status of the zone as seen by the delegating parent.
+// In case of mixed statuses, return the LEAST broken statue
 func (z *Zone) CalcZoneStatus() int32 {
 	cs := make(map[int]int32) // map[status]counter
 	for _, p := range z.ParentNS {
 		cs[int(p.ChildStatus)]++
 	}
 
-	// In case of mixed statuses:
-	// Set the _least_ broken status
 	if _, ok := cs[200]; ok {
 		return 200
 	}
@@ -206,10 +219,12 @@ func (c *Config) ZoneCutPath(list []string) []string {
 	return zonelist
 }
 
-// func (z *Zone) DelegationInBailiwick(ns string) bool {
+// DelegationInBailiwick
+//
+// Check if the name of the nameserver is a subdomain to the currently
+// queried domain. Relevant fpr finding glue.
 func DelegationInBailiwick(nsname, dom string) bool {
 	// make fqdn and compare the domain w the last part of NS name.
-	//dom := dns.Fqdn(ns[len(ns)-len(z.Name):])
 	domain := dns.Fqdn(nsname[len(nsname)-len(dom):])
 	if domain == nsname {
 		return true
@@ -217,35 +232,26 @@ func DelegationInBailiwick(nsname, dom string) bool {
 	return false
 }
 
-func (z *Zone) GetNS() {
-	// Return the first usable nameserver out of the NS list
-	for _, ref := range z.ZoneNS {
-		if z.NSIP[ref.Self].ZoneStatus == 200 {
-
-		}
-	}
-}
-
-func (z Zone) Print() {
-	jz, err := json.Marshal(z)
-	if err != nil {
-		fmt.Printf("Warning: unable to marshal(%s)\n", err.Error())
-	}
-	fmt.Printf("\n%+v\n", string(jz))
-}
-
+// ToJson
+//
+// Marshal the zone struct to JSON
 func (z Zone) ToJson() (string, error) {
 	jz, err := json.Marshal(z)
 	return string(jz), err
 }
 
+// ToJson
+//
+// Marshal the zone struct to JSON, formated for human eyes
 func (z Zone) ToPrettyJson() (string, error) {
 	jz, err := json.MarshalIndent(z, "", "  ")
 	return string(jz), err
 }
 
-// preload zone data from json file
-// mainly for root-hints and se-hints
+// Preload
+// Bootstrap the cache with ROOT-zone data from root-hints json file
+// Can be used for other prepared hint files. Zones dumped to json should
+// import with no hassle.
 func (z *Zone) Preload(file string) {
 
 	js, err := os.ReadFile("hints/" + file)
@@ -267,7 +273,9 @@ func NewServerCache() Map[Server] {
 	return NewMapFromConfig[Server](false) // set true for dummy
 }
 
-// return NS data for all nameservers in a namserver delegation.
+// QueryParentForDelegation
+//
+// Returns NS data for all nameservers in a namserver delegation.
 func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) error {
 
 	q := dig.NewQuery()
