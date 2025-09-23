@@ -74,8 +74,7 @@ func (c *Config) GetResolver() string {
 	return "1.1.1.1"
 }
 
-// if full is true every NS in delegation will be asked for zone
-// else, will only collect data from first available server
+// PrepZone
 func PrepZone(name string, cfg *Config) (Zone, error) {
 
 	var zone Zone
@@ -108,7 +107,25 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 	}
 
 	// Populate the parent nameserver info
-	err = zone.QueryParentForDelegation(nslist, cfg)
+
+	for ip, name := range nslist {
+		err = zone.QueryParentForDelegation(ip, name, cfg)
+	}
+
+	status := zone.CalcZoneStatus()
+
+	// If the parent zone has no info about the child zone
+	// i.e. 420 it is (most likely) not a proper zone
+	// Re-use parents status for the child zone
+	if status == 420 {
+		if pz, ok := cfg.Zones.Get(StripLabelFromLeft(zone.Name)); ok {
+			cfg.Log.Debug("Not proper zone. Re-using status from parent", "Zone", zone.Name, "Parent Zone Status", status)
+			status = pz.Status
+		}
+	}
+
+	zone.Status = status
+
 	if err != nil {
 		cfg.Log.Debug("Error doing QueryParentForDelegation()", "ERROR", err)
 	}
