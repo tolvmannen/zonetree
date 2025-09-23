@@ -40,15 +40,25 @@ func Run() {
 
 	router := gin.Default()
 
-	router.GET("/cache/dump", func(c *gin.Context) {
+	router.GET("/conf/show", func(c *gin.Context) {
+
+		outstr := cfg.RunningConf()
+
+		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+
+	})
+
+	router.GET("/conf/load/*file", func(c *gin.Context) {
+
+		file := strings.TrimLeft(c.Param("file"), "/")
 
 		var outstr string
 
-		for z := range cfg.Zones.IterBuffered() {
-			if zone, ok := Zones.Get(z.Value.Name); ok {
-				jstr, _ := zone.ToPrettyJson()
-				outstr += jstr
-			}
+		err := cfg.Load(file)
+		if err != nil {
+			outstr = err.Error()
+		} else {
+			outstr = "loaded conf file" + file
 		}
 
 		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
@@ -85,6 +95,63 @@ func Run() {
 
 		if z, ok := Zones.Get(zone); ok {
 			outstr, _ = z.ToPrettyJson()
+		}
+
+		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+
+	})
+
+	router.GET("/cache/clear/*zone", func(c *gin.Context) {
+		// trim any leading slash (applies when no 'name' is provided)
+		zone := strings.TrimLeft(c.Param("zone"), "/")
+		if zone != "" {
+			zone = cache.MakeFQDN(strings.ToLower(zone))
+		}
+
+		// default outstr if nothing returned from cache
+		outstr := "Zone not in cache:[" + zone + "]\n"
+
+		if z, ok := Zones.Get(zone); ok {
+			if z.Name != "." {
+				// Dont delete the ROOT
+				Zones.Remove(zone)
+				outstr = "Zone [" + z.Name + "] removed from cache"
+			} else {
+				outstr = "ERROR: ROOT cannot be deleted. Restart to load new data from root-hints."
+			}
+		}
+
+		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+
+	})
+
+	router.GET("/cache/reset", func(c *gin.Context) {
+
+		var outstr string
+
+		for z := range cfg.Zones.IterBuffered() {
+			if zone, ok := Zones.Get(z.Value.Name); ok {
+				// Dont delete the ROOT
+				if zone.Name != "." {
+					Zones.Remove(zone.Name)
+					outstr += "Zone [" + zone.Name + "] removed from cache\n"
+				}
+			}
+		}
+
+		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+
+	})
+
+	router.GET("/cache/dump", func(c *gin.Context) {
+
+		var outstr string
+
+		for z := range cfg.Zones.IterBuffered() {
+			if zone, ok := Zones.Get(z.Value.Name); ok {
+				jstr, _ := zone.ToPrettyJson()
+				outstr += jstr
+			}
 		}
 
 		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))

@@ -2,7 +2,9 @@ package cache
 
 import (
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"math/rand/v2"
+	"os"
 	"strconv"
 	"zonetree/logger"
 )
@@ -17,21 +19,28 @@ type Config struct {
 	Opt          Options  `json:"Opt"`
 }
 
+// Options
+//
+// There are a number of ways of doing lookups using Query Minimization
+// Some nameservers use different sequences for adding labels
+// All the Qmin-options deal with the Qmin lookup behaviour
+// QminLabelSequence	- The number of labels to add, in what sequence.
+//
+//	Usually the first two (tld, sld) eare added 1 by 1.
+//	To save on DNS queries, labels may be added in multiples
+//	I.e. 1,1,1,2,2,2,3,3,3... 1,1,1,1,1,1,1... 1,1,3,3,3,3,3... etc
+//
+// QminSubtractCache	- Count down on cache hits.
+// QminStrict		- If true, abort on fail rather than falling back to using the full domain name.
+// QminFirstPath	- If true, continue to next label after first successful lookup.
 type Options struct {
-	IPv4only     bool     `json:"IPv4only"`
-	IPv6only     bool     `json:"IPv6only"`
-	ResolverList []string `json:"ResolverList"`
-
-	// There are a number of ways of doing lookups using Query Minimization
-	// Some nameservers use differnt sequences for adding labels
-	// Usually the first two (tld, sld) are added 1 by 1.
-	// To save on DNS queries, further labels may be added in multiples
-	// I.e. 1,1,1,2,2,2,3,3,3... 1,1,1,1,1,1,1... 1,1,3,3,3,3,3... etc
-	// All the Qmin-options deal with the Qmin lookup behaviour
-	QminSubtractCache bool   `json:"QminSubtractCache"` // Count down on cache hits.
-	QminLabelSequence []int8 `json:"QminLabelSequence"` // The number of labels to add, in sequence.
-	QminStrict        bool   `json:"QminStrict"`        // If true, abort on fail rather than falling back to using the full domain name.
-	QminFirstPath     bool   `json:"QminFirstPath"`     // If true, continue to next label after first successful lookup.
+	IPv4only          bool     `json:"IPv4only" yaml:"IPv4only"`
+	IPv6only          bool     `json:"IPv6only" yaml:"IPv6only"`
+	ResolverList      []string `json:"ResolverList" yaml:"ResolverList"`
+	QminLabelSequence []int8   `json:"QminLabelSequence" yaml:"QminLabelSequence"`
+	QminSubtractCache bool     `json:"QminSubtractCache" yaml:"QminSubtractCache"`
+	QminStrict        bool     `json:"QminStrict" yaml:"QminStrict"`
+	QminFirstPath     bool     `json:"QminFirstPath" yaml:"QminFirstPath"`
 }
 
 func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
@@ -52,6 +61,9 @@ func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
 
 }
 
+// DefaultOptions
+//
+// Default options to use if config file can't be be fond/read
 func (c *Config) DefaultOptions() {
 	c.Opt = Options{
 		IPv4only:          true,
@@ -62,6 +74,38 @@ func (c *Config) DefaultOptions() {
 		QminFirstPath:     false,
 		ResolverList:      []string{"1.1.1.1", "8.8.8.8", "8.8.4.4", "9.9.9.9"},
 	}
+
+}
+
+// Load
+//
+// Loads a YAML config file, ovverwriting default options.
+func (c *Config) Load(file string) error {
+
+	cf, err := os.ReadFile("profiles/" + file)
+	if err != nil {
+		fmt.Printf("ReadFile error: %v\n", err)
+	}
+	yaml.Unmarshal(cf, &c.Opt)
+	/*
+		if err != nil {
+			fmt.Printf("YAML unmarshal error: %v\n", err)
+		}
+	*/
+
+	return err
+
+}
+
+// RunningConf
+//
+// Prints out the current loaded conf in YAML format.
+func (c *Config) RunningConf() []byte {
+	cnf, err := yaml.Marshal(&c.Opt)
+	if err != nil {
+		fmt.Printf("YAML marshal error: %v\n", err)
+	}
+	return cnf
 
 }
 

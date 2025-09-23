@@ -1,0 +1,13 @@
+---
+IPv4only: true
+IPv6only: false
+ResolverList:
+    - 1.1.1.1
+    - 8.8.8.8
+    - 8.8.4.4
+    - 9.9.9.9
+QminLabelSequence:
+    - 1
+QminSubtractCache: true
+QminStrict: false
+QminFirstPath: true 
