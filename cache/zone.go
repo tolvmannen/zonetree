@@ -13,7 +13,8 @@ import (
 
 // Having a laugh with HTTP status code references and stuff...
 var ZoneStatus = map[int32]string{
-	69:  "Nice", // Just nice
+	0:   "Ignored", // NS not used in test (likely due to QminFirtPath bing set)
+	69:  "Nice",    // Just nice
 	200: "Zone OK",
 	201: "Zone placeholder created",
 	204: "Not a Zone",      // Either a hostname or an empty non-terminal
@@ -277,7 +278,7 @@ func NewServerCache() Map[Server] {
 //
 // Returns NS data for a nameserver in a namserver delegation.
 // func (z *Zone) QueryParentForDelegation(nslist map[string]string, cfg *Config) error {
-func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) error {
+func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 
 	q := dig.NewQuery()
 	q.Qname = z.Name
@@ -504,14 +505,14 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) error {
 
 		z.Status = status
 	*/
-	return nil
+	return z.ParentNS[pid].ChildStatus
 }
 
 // QuerySelfForNS
 //
 // Queries all nameservers that we've found in delegations from parent nameservers.
 // to complete the list of nameservers (if needed) and add references to them-
-func (z *Zone) QuerySelfForNS(cfg *Config) error {
+func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 
 	q := dig.NewQuery()
 	q.Qname = z.Name
@@ -653,10 +654,10 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 				if err != nil {
 					cfg.Log.Error("Error in Biliwick Lookup", "ERR", err)
 				}
+
 				// If the delegation is out of bailiwick or if something
 				// went wrong and the Authoritative NS couldn't
 				// provide a lookup, look in cache for server.
-				//
 
 				cfg.Log.Debug("IP-list before cache", "list", iplist)
 				if len(iplist) < 1 {
@@ -720,6 +721,12 @@ func (z *Zone) QuerySelfForNS(cfg *Config) error {
 			slices.Sort(zns.NS)
 			// Add the ZonNS to the Zone
 			z.ZoneNS = append(z.ZoneNS, zns)
+
+			// If QminFirstPath, break at first usable reply
+			if QminFirstPath && z.Status == 200 {
+				cfg.Log.Debug("QminFirstPath enabled AND usable server found", "Server Name", nsip.Name, "Server IP", nsip.IP)
+				break
+			}
 
 		}
 

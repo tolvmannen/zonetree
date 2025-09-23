@@ -46,8 +46,7 @@ func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
 
 	conf.DefaultOptions()
 
-	//conf.ResolverList = []string{"1.1.1.1", "8.8.8.8", "8.8.4.4", "9.9.9.9"}
-	//conf.IPv4only = true
+	//conf.Opt.QminFirstPath = true
 
 	return conf
 
@@ -107,9 +106,13 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 	}
 
 	// Populate the parent nameserver info
-
+	// If the option for First Path is set, stop going through the list
+	// as soon as enough information to continue down the tree is obtaine
 	for ip, name := range nslist {
-		err = zone.QueryParentForDelegation(ip, name, cfg)
+		pds := zone.QueryParentForDelegation(ip, name, cfg)
+		if pds == 200 && cfg.Opt.QminFirstPath {
+			break
+		}
 	}
 
 	status := zone.CalcZoneStatus()
@@ -126,14 +129,8 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 
 	zone.Status = status
 
-	if err != nil {
-		cfg.Log.Debug("Error doing QueryParentForDelegation()", "ERROR", err)
-	}
-
-	// Check if the Zone exists, is an actual zone or if it is a hostname/empty non-terminal
-
 	// Populate the zones nameserver info
-	err = zone.QuerySelfForNS(cfg)
+	err = zone.QuerySelfForNS(cfg, cfg.Opt.QminFirstPath)
 	if err != nil {
 		cfg.Log.Debug("Error doing QuerySelfForNS()", "ERROR", err)
 	}
