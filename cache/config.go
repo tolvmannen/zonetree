@@ -64,6 +64,7 @@ func (c *Config) DefaultOptions() {
 	}
 
 }
+
 func (c *Config) GetResolver() string {
 	if len(c.Opt.ResolverList) > 0 {
 		return c.Opt.ResolverList[rand.IntN(len(c.Opt.ResolverList))]
