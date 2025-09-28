@@ -758,6 +758,13 @@ func StripLabelFromLeft(z string) string {
 	return parent
 }
 
-func MakeFQDN(name string) string {
+func ToFQDN(name string) string {
 	return dns.Fqdn(name)
+}
+
+// DigPath
+//
+// Wrapper for dig.Path
+func DigPath(dom string) []string {
+	return dig.Path(dom)
 }

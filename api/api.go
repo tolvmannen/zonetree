@@ -5,6 +5,8 @@ import (
 	//	"os"
 
 	//	"fmt"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -18,6 +20,7 @@ import (
 	// "golang.org/x/crypto/acme/autocert"
 	// "gopkg.in/yaml.v3"
 	"zonetree/cache"
+	"zonetree/html"
 	"zonetree/logger"
 )
 
@@ -69,15 +72,64 @@ func Run() {
 		// trim any leading slash (applies when no 'name' is provided)
 		zone := strings.TrimLeft(c.Param("zone"), "/")
 		if zone != "" {
-			zone = cache.MakeFQDN(strings.ToLower(zone))
+			zone = cache.ToFQDN(strings.ToLower(zone))
 		}
 
 		// default outstr if nothing returned from cache
-		outstr := "Zone not in cache:[" + zone + "]\n"
+		//outstr := "Zone not in cache:[" + zone + "]\n"
+		list := cache.DigPath(zone)
+		tree := cfg.ZoneCutPath(list)
+		tree = append([]string{"."}, tree...)
 
-		if z, ok := Zones.Get(zone); ok {
-			outstr, _ = z.ToPrettyJson()
+		fmt.Printf("\n%v\n", tree)
+
+		// Recursively (o_O) go through the list
+		var tr func(l []string) html.Node
+
+		tr = func(l []string) html.Node {
+
+			var HN html.Node
+
+			// Get Current zone
+			var qns bool
+			if z, ok := Zones.Get(l[0]); ok {
+
+				HN.Name = z.Name
+
+				qns = false
+				for _, ns := range z.NSIP {
+					//fmt.Printf("qns: %v : %v\n", qns, ns.ZoneStatus)
+					if qns == false && (ns.ZoneStatus == 200 || ns.ZoneStatus == 0) && len(l) > 1 {
+						n := tr(l[1:])
+						HN.Children = append(HN.Children, n)
+						qns = true
+
+					} else {
+						n := html.Node{Name: ns.Name + " (" + ns.IP + ")", Parent: &HN}
+						HN.Children = append(HN.Children, n)
+					}
+				}
+
+			}
+
+			return HN
 		}
+
+		var nodetree html.Node = tr(tree)
+
+		outstr, err := json.MarshalIndent(nodetree, "", "  ")
+		if err != nil {
+			outstr = []byte(err.Error())
+		}
+		/*
+			if z, ok := Zones.Get(zone); ok {
+				list := cache.DigPath(zone)
+				tree := cfg.ZoneCutPath(list)
+				outstr = "Zone cuts for" + z.Name + ":\n"
+				outstr += strings.Join(tree, "-->") + "\n"
+			}
+
+		*/
 
 		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
 
@@ -87,7 +139,7 @@ func Run() {
 		// trim any leading slash (applies when no 'name' is provided)
 		zone := strings.TrimLeft(c.Param("zone"), "/")
 		if zone != "" {
-			zone = cache.MakeFQDN(strings.ToLower(zone))
+			zone = cache.ToFQDN(strings.ToLower(zone))
 		}
 
 		// default outstr if nothing returned from cache
@@ -105,7 +157,7 @@ func Run() {
 		// trim any leading slash (applies when no 'name' is provided)
 		zone := strings.TrimLeft(c.Param("zone"), "/")
 		if zone != "" {
-			zone = cache.MakeFQDN(strings.ToLower(zone))
+			zone = cache.ToFQDN(strings.ToLower(zone))
 		}
 
 		// default outstr if nothing returned from cache
