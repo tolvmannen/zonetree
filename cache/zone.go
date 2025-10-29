@@ -155,8 +155,7 @@ func (z *Zone) CalcZoneStatus() int32 {
 // BuildZoneCache
 //
 // Iterativly go through the DNS tree and build up:
-// 1. a Zone cache for the different DNS nodes.
-// 2. a globar Server cache with lookup info, mainly for batch use
+// 1. a Zone cache for the different DNS nodes. 2. a globar Server cache with lookup info, mainly for batch use
 // Keeping them separate should help with r/w access.
 func BuildZoneCache(z string, cfg *Config) {
 

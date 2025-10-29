@@ -5,13 +5,12 @@ import (
 	//	"os"
 
 	//	"fmt"
-	"encoding/json"
-	"fmt"
+	//	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"strings"
-	//	"time"
 
 	//	"github.com/gin-contrib/cors"
 	//	"github.com/gin-contrib/static"
@@ -20,8 +19,8 @@ import (
 	// "golang.org/x/crypto/acme/autocert"
 	// "gopkg.in/yaml.v3"
 	"zonetree/cache"
-	"zonetree/html"
 	"zonetree/logger"
+	"zonetree/zonetests"
 )
 
 const (
@@ -68,71 +67,75 @@ func Run() {
 
 	})
 
-	router.GET("/cache/tree/*zone", func(c *gin.Context) {
-		// trim any leading slash (applies when no 'name' is provided)
-		zone := strings.TrimLeft(c.Param("zone"), "/")
-		if zone != "" {
-			zone = cache.ToFQDN(strings.ToLower(zone))
+	router.POST("/ut/*test", func(c *gin.Context) {
+		// Dirty execution time check
+
+		test := strings.TrimLeft(c.Param("test"), "/")
+
+		var zt zonetests.TestSuite
+		var outstr string
+		if err := c.ShouldBindJSON(&zt); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
-		// default outstr if nothing returned from cache
-		//outstr := "Zone not in cache:[" + zone + "]\n"
-		list := cache.DigPath(zone)
-		tree := cfg.ZoneCutPath(list)
-		tree = append([]string{"."}, tree...)
-
-		fmt.Printf("\n%v\n", tree)
-
-		// Recursively (o_O) go through the list
-		var tr func(l []string) html.Node
-
-		tr = func(l []string) html.Node {
-
-			var HN html.Node
-
-			// Get Current zone
-			var qns bool
-			if z, ok := Zones.Get(l[0]); ok {
-
-				HN.Name = z.Name
-
-				qns = false
-				for _, ns := range z.NSIP {
-					//fmt.Printf("qns: %v : %v\n", qns, ns.ZoneStatus)
-					if qns == false && (ns.ZoneStatus == 200 || ns.ZoneStatus == 0) && len(l) > 1 {
-						n := tr(l[1:])
-						HN.Children = append(HN.Children, n)
-						qns = true
-
-					} else {
-						n := html.Node{Name: ns.Name + " (" + ns.IP + ")", Parent: &HN}
-						HN.Children = append(HN.Children, n)
-					}
-				}
-
-			}
-
-			return HN
-		}
-
-		var nodetree html.Node = tr(tree)
-
-		outstr, err := json.MarshalIndent(nodetree, "", "  ")
-		if err != nil {
-			outstr = []byte(err.Error())
-		}
 		/*
-			if z, ok := Zones.Get(zone); ok {
-				list := cache.DigPath(zone)
-				tree := cfg.ZoneCutPath(list)
-				outstr = "Zone cuts for" + z.Name + ":\n"
-				outstr += strings.Join(tree, "-->") + "\n"
-			}
+
+			zone := strings.ToLower(zt.Zone)
+			cache.BuildZoneCache(zone, &cfg)
+
+			elapsed := time.Since(start)
+
+			outstr = "Tested Zone:[" + zone + "] (" + elapsed.String() + ")\n"
+			//outstr = "Test zone:" + zt.Zone + "\n"
 
 		*/
 
+		var iplist = []string{
+			"127.0.0.1",
+			"203.0.113.15",
+			"192.0.0.8",
+			"192.0.1.1",
+			"192.88.99.2",
+			"192.88.99.9",
+			"192.0.0.8",
+			"213.50.29.170",
+		}
+
+		for _, ipaddr := range iplist {
+			zt.Address01(ipaddr)
+		}
+
+		outstr = "Doing test:[" + test + "] )\n"
+
 		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
 
+		//c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+	})
+
+	router.POST("/run", func(c *gin.Context) {
+		// Dirty execution time check
+		start := time.Now()
+
+		var zt zonetests.TestSuite
+		var outstr string
+		if err := c.ShouldBindJSON(&zt); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		zone := strings.ToLower(zt.Zone)
+
+		cache.BuildZoneCache(zone, &cfg)
+
+		elapsed := time.Since(start)
+
+		outstr = "Tested Zone:[" + zone + "] (" + elapsed.String() + ")\n"
+		//outstr = "Test zone:" + zt.Zone + "\n"
+
+		c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
+
+		//c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
 	})
 
 	router.GET("/cache/list/*zone", func(c *gin.Context) {
