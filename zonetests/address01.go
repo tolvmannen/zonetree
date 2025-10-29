@@ -6,18 +6,7 @@ import (
 	"zonetree/cache"
 )
 
-func (ts *TestSuite) Address01(ipaddr string) {
-
-	var tbl []cache.SuIP
-
-	files := []string{
-		"assets/iana-ipv6-special-registry-1.csv",
-		"assets/iana-ipv4-special-registry-1.csv",
-	}
-
-	for _, file := range files {
-		tbl = append(cache.ReadCSV(file), tbl...)
-	}
+func (ts *TestSuite) Address01(ipaddr string, tbl []cache.SuIP) {
 
 	for _, r := range tbl {
 

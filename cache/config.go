@@ -13,6 +13,7 @@ type Config struct {
 	Log          logger.Logger
 	Zones        Map[Zone]
 	Cache        Map[Server]
+	SuIP         []SuIP   // Special Use IP-adresses
 	IPv4only     bool     `json:"IPv4only"`
 	IPv6only     bool     `json:"IPv6only"`
 	ResolverList []string `json:"ResolverList"`
@@ -43,11 +44,19 @@ type Options struct {
 	QminFirstPath     bool     `json:"QminFirstPath" yaml:"QminFirstPath"`
 }
 
-func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
+// func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
+func Init() Config {
 	var conf Config
-	conf.Log = log
-	conf.Zones = zc
-	conf.Cache = sc
+	conf.Zones = NewZoneCache()
+	conf.Cache = NewServerCache()
+	conf.Log = logger.PrintDebugLog()
+
+	files := []string{
+		"assets/iana-ipv6-special-registry-1.csv",
+		"assets/iana-ipv4-special-registry-1.csv",
+	}
+
+	conf.SuIP = LoadList(files)
 
 	var root Zone
 	root.Preload("root-hints.json")

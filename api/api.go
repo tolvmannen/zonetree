@@ -19,7 +19,7 @@ import (
 	// "golang.org/x/crypto/acme/autocert"
 	// "gopkg.in/yaml.v3"
 	"zonetree/cache"
-	"zonetree/logger"
+	//"zonetree/logger"
 	"zonetree/zonetests"
 )
 
@@ -32,13 +32,10 @@ const (
 )
 
 var cfg cache.Config
-var Log = logger.PrintDebugLog()
-var Zones = cache.NewZoneCache()
-var Cache = cache.NewServerCache()
 
 func Run() {
 
-	cfg = cache.Init(&Log, Zones, Cache)
+	cfg = cache.Init()
 
 	router := gin.Default()
 
@@ -103,7 +100,7 @@ func Run() {
 		}
 
 		for _, ipaddr := range iplist {
-			zt.Address01(ipaddr)
+			zt.Address01(ipaddr, cfg.SuIP)
 		}
 
 		outstr = "Doing test:[" + test + "] )\n"
@@ -148,7 +145,7 @@ func Run() {
 		// default outstr if nothing returned from cache
 		outstr := "Zone not in cache:[" + zone + "]\n"
 
-		if z, ok := Zones.Get(zone); ok {
+		if z, ok := cfg.Zones.Get(zone); ok {
 			outstr, _ = z.ToPrettyJson()
 		}
 
@@ -166,10 +163,10 @@ func Run() {
 		// default outstr if nothing returned from cache
 		outstr := "Zone not in cache:[" + zone + "]\n"
 
-		if z, ok := Zones.Get(zone); ok {
+		if z, ok := cfg.Zones.Get(zone); ok {
 			if z.Name != "." {
 				// Dont delete the ROOT
-				Zones.Remove(zone)
+				cfg.Zones.Remove(zone)
 				outstr = "Zone [" + z.Name + "] removed from cache"
 			} else {
 				outstr = "ERROR: ROOT cannot be deleted. Restart to load new data from root-hints."
@@ -185,10 +182,10 @@ func Run() {
 		var outstr string
 
 		for z := range cfg.Zones.IterBuffered() {
-			if zone, ok := Zones.Get(z.Value.Name); ok {
+			if zone, ok := cfg.Zones.Get(z.Value.Name); ok {
 				// Dont delete the ROOT
 				if zone.Name != "." {
-					Zones.Remove(zone.Name)
+					cfg.Zones.Remove(zone.Name)
 					outstr += "Zone [" + zone.Name + "] removed from cache\n"
 				}
 			}
@@ -203,7 +200,7 @@ func Run() {
 		var outstr string
 
 		for z := range cfg.Zones.IterBuffered() {
-			if zone, ok := Zones.Get(z.Value.Name); ok {
+			if zone, ok := cfg.Zones.Get(z.Value.Name); ok {
 				jstr, _ := zone.ToPrettyJson()
 				outstr += jstr
 			}

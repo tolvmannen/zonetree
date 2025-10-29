@@ -21,6 +21,17 @@ type SuIP struct {
 	Class  string
 }
 
+func LoadList(files []string) []SuIP {
+
+	var IPtable []SuIP
+
+	for _, file := range files {
+		IPtable = append(IPtable, ReadCSV(file)...)
+	}
+
+	return IPtable
+}
+
 // ReadCSV
 //
 // Parses IANAs list of Special Use IP addresses as provided on their
