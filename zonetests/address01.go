@@ -6,7 +6,11 @@ import (
 	"zonetree/cache"
 )
 
-func (ts *TestSuite) Address01(ipaddr string, tbl []cache.SuIP) {
+func (zt *ZoneTest) Address01() {
+
+}
+
+func (ts TestRunner) DepAddress01(ipaddr string, tbl []cache.SuIP) {
 
 	for _, r := range tbl {
 
