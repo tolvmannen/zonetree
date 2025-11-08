@@ -44,19 +44,16 @@ type Options struct {
 	QminFirstPath     bool     `json:"QminFirstPath" yaml:"QminFirstPath"`
 }
 
-// func Init(log logger.Logger, zc Map[Zone], sc Map[Server]) Config {
+// Init
+//
+// Initialses the confguration used when running tests.
 func Init() Config {
 	var conf Config
 	conf.Zones = NewZoneCache()
 	conf.Cache = NewServerCache()
 	conf.Log = logger.PrintDebugLog()
 
-	files := []string{
-		"assets/iana-ipv6-special-registry-1.csv",
-		"assets/iana-ipv4-special-registry-1.csv",
-	}
-
-	conf.SuIP = LoadList(files)
+	conf.SuIP = DefaultSuIP()
 
 	var root Zone
 	root.Preload("root-hints.json")
@@ -193,7 +190,27 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 
 }
 
-// Move to Zones
+// PrepUndelegatedZone
+//
+// Undelegated zones relies on user submitted data. No traversal of the
+// DNS-tree from ROOT down will be attempted
+func PrepUndelegatedZone(name string, cfg *Config, uns []NSIP) (Zone, error) {
+
+	var zone Zone
+	var err error
+	cfg.Log.Debug("Prepping Undelegated zone from userdata", "zone", name)
+
+	zone.Name = name
+	if len(uns) > 0 {
+		zone.NSIP = uns
+	} else {
+		cfg.Log.Debug("Userdata incomplete. Missing NS info", "zone", name)
+	}
+
+	return zone, err
+}
+
+// TODO Move to Zones
 func Nameservers(ZoneName string, cfg *Config) (map[string]string, string, error) {
 	// Try to get the zone from cache
 	cfg.Log.Debug("Loading zone", "zone", ZoneName)

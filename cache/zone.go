@@ -24,7 +24,7 @@ var ZoneStatus = map[int32]string{
 	404: "NXDOMAIN",
 	420: "Just say no",      // What even is this?
 	422: "Unable to comply", // Unprocessable. Most likely disallowed due to Config option.
-	500: "Server error",
+	500: "Broken Zone",      // Server error
 }
 
 // Zone
@@ -64,7 +64,8 @@ type ParentNS struct {
 
 // NSIP
 //
-// Struct to hold relevant NS / Delegation data
+// Struct to hold relevant NS / Delegation data.
+// Every name/IP is a unique combination.
 type NSIP struct {
 	Name       string `json:"Name"`
 	IP         string `json:"IP"`
@@ -174,16 +175,21 @@ func BuildZoneCache(z string, cfg *Config) {
 
 		zone, err := PrepZone(node, cfg)
 
+		// If there is an error, add the zone to the cache with the
+		// "Boken" status.
 		if err != nil {
 			cfg.Log.Error("Error preparing zone", "zone", node, "Error", err)
+			zone = Zone{Name: node, Status: 500}
 		}
 		cfg.Zones.Set(node, zone)
+
 	}
 
-	tree := cfg.ZoneCutPath(list)
-
-	fmt.Printf("\n\nLIST: %v\n\n", list)
-	fmt.Printf("\n\nTREE: %v\n\n", tree)
+	/*
+		tree := cfg.ZoneCutPath(list)
+		fmt.Printf("\n\nLIST: %v\n\n", list)
+		fmt.Printf("\n\nTREE: %v\n\n", tree)
+	*/
 
 }
 

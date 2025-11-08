@@ -5,14 +5,6 @@ import (
 	"zonetree/cache"
 )
 
-/*
-type ZoneTests interface {
-	Run(param TestParam)
-	Passed()   //  boolean based on test criteria
-	Messages() // returns list of messags from test results
-}
-*/
-
 // TestStatusMap
 //
 // Keeps track on test progression.
@@ -25,15 +17,32 @@ var TestStatusMap = map[int8]string{
 	5: "Passed",
 }
 
+// ZoneTest
+//
+// All tests needs to implement the interface methods.
+type ZoneTest interface {
+	New(cfg *cache.Config)
+	Status()
+	Run()
+}
+
 // TestRequest
 //
 // Client request to run a number of tests on a nmber of zones.
-// Delegation information is optional can be supplied on a zone to zone basis.
+// Delegation information is optional and will only be used if.
+// Undelegated flag is set to true
 // The list of tests will be run on all zones. Different sets of tests
 // requires separate requests.
 type TestRequest struct {
-	Zones []ZoneInfo `json:"Zones"` // List of zones to run the tests on
-	Tests []string   `json:"Tests"` // List of tests to run on the zones
+	Zones       []ZoneInfo `json:"ZoneInfo"`    // List of zones to run the tests on
+	Tests       []string   `json:"Tests"`       // List of tests to run on the zones
+	Undelegated bool       `json:"Undelegated"` // If true, use the name server data provided
+}
+
+type ZoneInfo struct {
+	Name string
+	UNS  []cache.NSIP // (Undelegated) Name Servers
+	DS   string
 }
 
 // String
@@ -51,32 +60,6 @@ func (t TestRequest) String() string {
 	return out
 }
 
-// ZoneTest
-//
-// Contains all data needed to run test as well as resulting messages
-// Tries keeps track of the number of the times the test has been tried.
-type ZoneTest struct {
-	Status   int8 // See TestStatusMap for ref.
-	Tries    int8
-	Weight   int8      // Helps determine the order/grouping of tests.
-	DelegNS  []DelegNS // Only used with undelegated tests
-	Messages []string  // Key for message table
-}
-
-type ZoneInfo struct {
-	Name    string  `json:"Name"`    // Name of the zone
-	DelegNS DelegNS `json:"DelegNS"` // Delegation info (optional)
-}
-
-// DelegNS
-//
-// (optional) Manually supplied information about delegating name servers.
-type DelegNS struct {
-	Name string `json:"Name"`
-	IP   string `json:"IP"`
-	DS   string `json:"DS"`
-}
-
 // TestMessage
 //
 // Provides both a summary (Short) and a more thorough message.
@@ -89,8 +72,7 @@ type TestMessage struct {
 //
 // Contains test set for a zone. Tests that have passed or failed are moved to the Done queue
 type TestRunner struct {
-	Cfg   *cache.Config
-	Zone  string
+	//	Cfg   *cache.Config
 	Queue []ZoneTest
 	Done  []ZoneTest
 }
@@ -101,6 +83,9 @@ func NewRunner(cfg *cache.Config, zone string) TestRunner {
 
 }
 
+// TestBatch
+//
+// A set of TestRunners
 type TestBatch []TestRunner
 
 /*

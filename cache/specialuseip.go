@@ -10,6 +10,17 @@ import (
 	"strings"
 )
 
+// ipdoc
+//
+// Local copies of IANAs list of Special Use IP addresses as provided on their
+// website.
+// https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry-1.csv
+// https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry-1.csv
+var ipdoc = []string{
+	"assets/iana-ipv6-special-registry-1.csv",
+	"assets/iana-ipv4-special-registry-1.csv",
+}
+
 // SuIP
 //
 // Special Use IP. We only care about a few parameters here:
@@ -21,7 +32,11 @@ type SuIP struct {
 	Class  string
 }
 
-func LoadList(files []string) []SuIP {
+func DefaultSuIP() []SuIP {
+	return LoadLists(ipdoc)
+}
+
+func LoadLists(files []string) []SuIP {
 
 	var IPtable []SuIP
 
@@ -34,10 +49,7 @@ func LoadList(files []string) []SuIP {
 
 // ReadCSV
 //
-// Parses IANAs list of Special Use IP addresses as provided on their
-// website and makes a classification list based on keywords.
-// https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry-1.csv
-// https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry-1.csv
+// Parses CSV files and makes a classification list based on keywords.
 func ReadCSV(file string) []SuIP {
 	b, err := os.ReadFile(file)
 	if err != nil {

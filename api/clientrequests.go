@@ -1,10 +1,12 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
+	"zonetree/cache"
 	"zonetree/zonetests"
 )
 
@@ -24,23 +26,46 @@ func RunTest(c *gin.Context) {
 
 	var text string
 
-	for _, zone := range tr.Zones {
-
-		text += "Zone: " + zone.Name + "\n"
-		//t := zonetests.NewRunner(&cfg, zone.Name)
-		for _, testname := range tr.Tests {
-			//t.AddTest(test)
-			text += "  - " + testname + "\n"
-		}
-
+	if tr.Undelegated {
+		text = UndelegatedTest(tr)
+	} else {
+		text = SmallTest(tr)
 	}
 
 	//text := tr.String()
 	elapsed := time.Since(start)
 
 	//outstr = "Tested Zone:[" + zone + "] (" + elapsed.String() + ")\n"
-	outstr = text + " /n/n(" + elapsed.String() + ")\n"
+	outstr = text + " \n\nTook: (" + elapsed.String() + ")\n"
 
 	c.Data(http.StatusOK, ContentTypeHTML, []byte(outstr))
 
+}
+
+func UndelegatedTest(tr zonetests.TestRequest) string {
+	// If the Undelegated flag is set, there is no need to
+	// traverse the DNS tree.
+	for _, z := range tr.Zones {
+		cache.PrepUndelegatedZone(z.Name, &cfg, z.UNS)
+	}
+
+	return "Undelegated test: "
+}
+
+func SmallTest(tr zonetests.TestRequest) string {
+
+	var text string
+
+	for _, z := range tr.Zones {
+
+		cache.BuildZoneCache(z.Name, &cfg)
+
+		//t := zonetests.NewRunner(&cfg, zone.Name)
+		for _, testname := range tr.Tests {
+			//t.AddTest(test)
+			text += "Zone: " + z.Name + " - " + testname + "\n"
+		}
+
+	}
+	return text
 }

@@ -38,8 +38,6 @@ func Run() {
 
 	router.GET("/conf/load/*file", LoadConf)
 
-	router.POST("/run", RunTest)
-
 	router.GET("/cache/list/*zone", PrintJzone)
 
 	router.GET("/cache/clear/*zone", ClearZone)
@@ -47,6 +45,8 @@ func Run() {
 	router.GET("/cache/reset", ClearCache)
 
 	router.GET("/cache/dump", DumpCache)
+
+	router.POST("/test/run", RunTest)
 
 	router.GET("/test/*zone", func(c *gin.Context) {
 		// trim any leading slash (applies when no 'name' is provided)

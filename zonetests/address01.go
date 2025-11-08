@@ -1,37 +1,46 @@
 package zonetests
 
 import (
-	"fmt"
-	"net/netip"
+	//"fmt"
+	//"net/netip"
 	"zonetree/cache"
 )
 
-func (zt *ZoneTest) Address01() {
-
+// Address01
+//
+// Struct that implements the ZoneTest interface
+type Address01 struct {
+	zone string       // name of zone to test
+	UNS  []cache.NSIP // nameserver info when running an undelegated test
+	//DS       string       // DS record when running undelegated test
+	status   int8 // See TestStatusMap for ref.
+	tries    int8
+	messages []string // Key for message table
+	cfg      *cache.Config
 }
 
-func (ts TestRunner) DepAddress01(ipaddr string, tbl []cache.SuIP) {
+func (a *Address01) Status() int8 { return a.status }
 
-	for _, r := range tbl {
+func (a *Address01) New(cfg *cache.Config, zi ZoneInfo) error {
+	a.zone = zi.Name
+	a.cfg = cfg
 
-		net, err := netip.ParsePrefix(r.Block)
+	return nil
+}
 
-		if err != nil {
-			panic(err)
-		}
+/*
 
-		ip, err := netip.ParseAddr(ipaddr)
+func (a *Address01) Run() {
 
-		if err != nil {
-			panic(err)
-		}
-
-		b := net.Contains(ip)
-		if b == true {
-			fmt.Printf("IP: %v - Net: %v - Routable? %v\n", ip, net, r.Global)
-		}
+	if len(a.UNS) > 0 {
 
 	}
-	//var t TestResult
+
+
+	for _,block := range a.cfg.SuIP {
+		return
+	}
 
 }
+
+*/
