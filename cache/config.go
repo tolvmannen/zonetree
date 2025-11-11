@@ -125,6 +125,9 @@ func (c *Config) GetResolver() string {
 }
 
 // PrepZone
+//
+// This will use an opportunistic approach to gather data on the child zone
+// for use in later tests.
 func PrepZone(name string, cfg *Config) (Zone, error) {
 
 	var zone Zone

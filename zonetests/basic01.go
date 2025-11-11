@@ -1,15 +1,10 @@
 package zonetests
 
 import (
-	//"fmt"
-	//"net/netip"
 	"zonetree/cache"
 )
 
-// Address01
-//
-// Struct that implements the ZoneTest interface
-type Address01 struct {
+type Basic01 struct {
 	zone string       // name of zone to test
 	UNS  []cache.NSIP // nameserver info when running an undelegated test
 	//DS       string       // DS record when running undelegated test
@@ -19,28 +14,11 @@ type Address01 struct {
 	cfg      *cache.Config
 }
 
-func (t *Address01) Status() int8 { return t.status }
+func (t *Basic01) Status() int8 { return a.status }
 
-func (t *Address01) New(cfg *cache.Config, zi ZoneInfo) error {
+func (t *Basic01) New(cfg *cache.Config, zi ZoneInfo) error {
 	t.zone = zi.Name
 	t.cfg = cfg
 
 	return nil
 }
-
-/*
-
-func (a *Address01) Run() {
-
-	if len(a.UNS) > 0 {
-
-	}
-
-
-	for _,block := range a.cfg.SuIP {
-		return
-	}
-
-}
-
-*/
