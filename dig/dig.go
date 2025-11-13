@@ -2,6 +2,7 @@ package dig
 
 import (
 	//"fmt"
+	"context"
 	"log"
 	"strconv"
 	"strings"
@@ -88,41 +89,18 @@ func Dig(query Query) (dns.Msg, error) {
 		}
 	}
 
-	//response, rtt, err := client.Exchange(message, nameserver)
-	response, _, err := client.Exchange(message, nameserver)
+	//response, _, err := client.Exchange(message, nameserver)
+
+	ctx := context.Background()
+	co, err := client.Dial(nameserver)
+	if err != nil {
+		return *failure(err.Error()), err
+	}
+	response, _, err := client.ExchangeWithConnContext(ctx, message, co)
 
 	if err != nil {
-		// we panic here for now
-		/*
-			panic(err)
-		*/
-		// Craft a placeholder responde here instead of panicking,
-		// just to avoid nil pointer reference.
-		response = &dns.Msg{
-			MsgHdr: dns.MsgHdr{
-				Opcode: dns.OpcodeQuery,
-				Rcode:  dns.RcodeServerFailure,
-			},
-			Question: make([]dns.Question, 1),
-		}
+		return *failure(err.Error()), err
 	}
-
-	/*
-		msgSize := response.Len()
-
-		digOut := DigOut{
-			Qname:      query.Qname,
-			Query:      message, // Useful for the +qr option
-			Response:   response,
-			RTT:        rtt, // Note to self: rtt is in nanoseconds (1M ns = 1 millisecond)
-			Nameserver: nameserver,
-			QNSname:    QNS,
-			ShowQuery:  query.ShowQuery, // Useful for the +qr option
-			MsgSize:    msgSize,
-			Transport:  query.Transport,
-		}
-
-	*/
 
 	if query.NoCrypto {
 		nocryptoMsg(response)
@@ -130,6 +108,36 @@ func Dig(query Query) (dns.Msg, error) {
 
 	//return *response, err
 	return *response, err
+}
+
+// Craft a placeholder responde here instead of panicking,
+// to avoid nil pointer reference and stuff...
+func failure(err string) *dns.Msg {
+
+	response := &dns.Msg{
+		MsgHdr: dns.MsgHdr{
+			Opcode: dns.OpcodeQuery,
+			Rcode:  dns.RcodeServerFailure,
+		},
+		Question: make([]dns.Question, 1),
+	}
+
+	o := &dns.OPT{
+		Hdr: dns.RR_Header{
+			Name:   ".",
+			Rrtype: dns.TypeOPT,
+		},
+	}
+	e := &dns.EDNS0_EDE{
+		InfoCode:  dns.ExtendedErrorCodeOther,
+		ExtraText: err,
+	}
+	o.Option = append(o.Option, e)
+
+	response.Extra = append(response.Extra, o)
+
+	return response
+
 }
 
 // emulate the dig option +nocrypto

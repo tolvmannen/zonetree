@@ -14,7 +14,7 @@ type Basic01 struct {
 	cfg      *cache.Config
 }
 
-func (t *Basic01) Status() int8 { return a.status }
+func (t *Basic01) Status() int8 { return t.status }
 
 func (t *Basic01) New(cfg *cache.Config, zi ZoneInfo) error {
 	t.zone = zi.Name
@@ -22,3 +22,5 @@ func (t *Basic01) New(cfg *cache.Config, zi ZoneInfo) error {
 
 	return nil
 }
+
+func (t *Basic01) Run() int8 { return t.status }

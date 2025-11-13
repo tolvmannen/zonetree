@@ -288,7 +288,7 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 	q := dig.NewQuery()
 	q.Qname = z.Name
 	q.Qtype = "SOA" // query for SOA and set DO (qmin-ish and may save a query or two)
-	q.DO = true
+	q.DO = true     // try to get as much info as possible on the first try
 
 	//	for ip, name := range nslist {
 
@@ -307,23 +307,23 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 		pid = slices.IndexFunc(z.ParentNS, func(ns ParentNS) bool {
 			return ns.IP == ip
 		})
-		cfg.Log.Debug("DELEGATION: IP not found in ParentNS. Creating placeholder", "IP", ip, "Name", name, "ID", pid)
+		cfg.Log.Debug("IP not found in ParentNS. Creating placeholder", "Func", "QueryParentForDelegation", "IP", ip, "Name", name, "ID", pid)
 	} else {
-		cfg.Log.Debug("DELEGATION: IP already in ParentNS.", "IP", ip, "ID", pid)
+		cfg.Log.Debug("IP already in ParentNS.", "Func", "QueryParentForDelegation", "IP", ip, "ID", pid)
 	}
 
 	q.Nameserver = ip
-	cfg.Log.Debug("Parent Query:", "query", q)
+	cfg.Log.Debug("Parent Query:", "Func", "QueryParentForDelegation", "query", q)
 	msg, err := dig.GetDelegation(q, cfg.Log)
 	if err != nil {
 		//cfg.Log.Error("DELEGATION: Error looking up domain", "domain", err.Error())
-		cfg.Log.Debug("Query Failed Trying next nameserver in list", "ERROR", err)
+		cfg.Log.Debug("Query Failed Trying next nameserver in list", "Func", "QueryParentForDelegation", "ERROR", err)
 		//continue
 	}
 
 	if msg.Rcode == "NOERROR" {
 
-		cfg.Log.Debug("DELEGATION: NOERROR", "QNAME", q.Qname, "server", q.Nameserver)
+		cfg.Log.Debug("DELEGATION: NOERROR", "Func", "QueryParentForDelegation", "QNAME", q.Qname, "server", q.Nameserver)
 
 		// Get info from Auth section
 		// Extract DNSSEC info, if any, and make a list of delegation
@@ -358,7 +358,7 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 				z.ParentNS[pid].ChildStatus = 204
 				z.Status = 204
 				z.ZoneCut = au.Name
-				cfg.Log.Debug("[Parent] reported [Name] to be a part of [Zone]", "Parent", q.Nameserver, "Name", q.Qname, "Zone", au.Name)
+				cfg.Log.Debug("[Parent] reported [Name] to be a part of [Zone]", "Func", "QueryParentForDelegation", "Parent", q.Nameserver, "Name", q.Qname, "Zone", au.Name)
 
 			default:
 			}
@@ -391,7 +391,7 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 			}
 		}
 
-		cfg.Log.Debug("DELEGATION: Pepared ns <-> ip list for Parent NS", "NS", q.Nameserver, "LIST", delegns)
+		cfg.Log.Debug("CHecking NSIP list", "Func", "QueryParentForDelegation", "NS", q.Nameserver, "LIST", delegns)
 		// Go through the list of ns <-> ip and check if there is
 		// already an identical entry in the zones NSIP list.
 		// If so, add a reference. If not, add both entry and reference
@@ -412,25 +412,25 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 					id = slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
 						return ns.Name == e.Name && ns.IP == e.IP
 					})
-					cfg.Log.Debug("DELEGATIO|: Did not find identical match. Adding new entry", "NSIP", nsip, "Index", id)
+					cfg.Log.Debug("Match not found Adding new entry", "Func", "QueryParentForDelegation", "NSIP", nsip, "Index", id)
 				} else {
-					cfg.Log.Debug("DELEGATION: Found identical match.", "NS", e.Name, "IP", e.IP, "Index", id)
+					cfg.Log.Debug("Match found.", "Func", "QueryParentForDelegation", "NS", e.Name, "IP", e.IP, "Index", id)
 				}
 				z.ParentNS[pid].NS = append(z.ParentNS[pid].NS, int8(id))
 			} else {
-				cfg.Log.Debug("DELEGATION: No IP in ns <-> pair. Doing recursive lookup", "Name", e.Name)
+				cfg.Log.Debug("Match not found. Doing recursive lookup", "Func", "QueryParentForDelegation", "Name", e.Name)
 
 				var iplist []string
 				// Check if the name server is in the global cache
 				if server, ok := cfg.Cache.Get(e.Name); ok {
-					cfg.Log.Debug("DELEGATION: Nameserver found in global cache", "Name", e.Name)
+					cfg.Log.Debug("NS in Global Cache", "Func", "QueryParentForDelegation", "Name", e.Name)
 					for _, ip := range server.IP {
 						iplist = append(iplist, ip)
 					}
 				}
 
 				if len(iplist) < 1 {
-					cfg.Log.Debug("DELEGATION: Nameserver NOT in global cache. Querying resolver.", "Name", e.Name)
+					cfg.Log.Debug("NS NOT in global cache. Querying resolver.", "Func", "QueryParentForDelegation", "Name", e.Name)
 					// Cheat and use a resolver to get the IP(s) for the NS name
 					iplist, _ = dig.QndQuery(e.Name, cfg.GetResolver(), cfg.Log)
 					if len(iplist) > 0 {
@@ -443,7 +443,7 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 					// Even if the IP was not in the Glue for this NS
 					// it might have been added when processing another
 					// nameserver. Extra check just in case.
-					cfg.Log.Debug("DELEGATION: IP-LIST for nameserver.", "Name", e.Name, "IP", ip)
+					cfg.Log.Debug("IP-LIST for nameserver.", "Func", "QueryParentForDelegation", "Name", e.Name, "IP", ip)
 					id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
 						return ns.Name == e.Name && ns.IP == ip
 					})
@@ -456,7 +456,7 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 						id = slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
 							return ns.Name == e.Name && ns.IP == ip
 						})
-						cfg.Log.Debug("DELEGATION: ns <-> ip pair (still) not in list. Adding new entry", "NSIP", nsip, "Index", id)
+						cfg.Log.Debug("NS (still) not in list. Adding new entry", "Func", "QueryParentForDelegation", "NSIP", nsip, "Index", id)
 					}
 					z.ParentNS[pid].NS = append(z.ParentNS[pid].NS, int8(id))
 				}
@@ -484,32 +484,6 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 		z.ParentNS[pid].ChildStatus = 403
 	}
 
-	/*
-		// If the QminFirstPath option is set, check if there is enough info to
-		// continue without goung through the rest of the nameservers.
-		if cfg.Opt.QminFirstPath {
-			// Acceptable statuses are 200 (ok) and 204 (n.e.t)
-			if z.ParentNS[pid].ChildStatus == 200 || z.ParentNS[pid].ChildStatus == 204 {
-				cfg.Log.Debug("Taking first available path.", "Status", z.ParentNS[pid].ChildStatus)
-				break
-			}
-		}
-		//	}
-
-		status := z.CalcZoneStatus()
-
-		// If the parent zone has no info about the child zone
-		// i.e. 420 it is (most likely) not a proper zone
-		// Re-use parents status for the child zone
-		if status == 420 {
-			if pz, ok := cfg.Zones.Get(StripLabelFromLeft(z.Name)); ok {
-				cfg.Log.Debug("Not proper zone. Re-using status from parent", "Zone", z.Name, "Parent Zone Status", status)
-				status = pz.Status
-			}
-		}
-
-		z.Status = status
-	*/
 	return z.ParentNS[pid].ChildStatus
 }
 
