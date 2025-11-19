@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
-	"zonetree/cache"
+	"zonetree/dig"
 )
 
 // ShowConf
@@ -40,7 +40,7 @@ func PrintJzone(c *gin.Context) {
 	// trim any leading slash (applies when no 'name' is provided)
 	zone := strings.TrimLeft(c.Param("zone"), "/")
 	if zone != "" {
-		zone = cache.ToFQDN(strings.ToLower(zone))
+		zone = dig.ToFQDN(strings.ToLower(zone))
 	}
 
 	// default outstr if nothing returned from cache
@@ -61,7 +61,7 @@ func ClearZone(c *gin.Context) {
 	// trim any leading slash (applies when no 'name' is provided)
 	zone := strings.TrimLeft(c.Param("zone"), "/")
 	if zone != "" {
-		zone = cache.ToFQDN(strings.ToLower(zone))
+		zone = dig.ToFQDN(strings.ToLower(zone))
 	}
 
 	// default outstr if nothing returned from cache

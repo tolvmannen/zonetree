@@ -31,17 +31,21 @@ type DigRR struct {
 	Rdata []string
 }
 
+// GetRdata
+//
 // Returnd Rdata as one (1) space separated string
 func (rr *DigRR) GetRdata() string {
 	return strings.Join(rr.Rdata, " ")
 }
 
+// GetRdataFields
+//
 // Return Rdata as separate fields
 func (rr *DigRR) GetRdataFields() []string {
 	return rr.Rdata
 }
 
-func GetDelegation(q Query, log logger.Logger) (DigData, error) {
+func SendQuery(q Query, log logger.Logger) (DigData, error) {
 
 	var data DigData
 
@@ -102,19 +106,6 @@ func GetDelegation(q Query, log logger.Logger) (DigData, error) {
 	//log.Debug(" -- this is what the Reply MSG looks like --", "MSG", data)
 
 	return data, err
-}
-
-func Path(dom string) []string {
-	var tree []string
-	dom = dns.Fqdn(dom)
-	labels := strings.Split(dom, ".")
-	for k := range labels {
-		l := strings.Join(labels[k:], ".")
-		if l != "" {
-			tree = append([]string{l}, tree...)
-		}
-	}
-	return tree
 }
 
 func QndQuery(qname, resolver string, log logger.Logger) ([]string, error) {

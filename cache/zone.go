@@ -290,8 +290,6 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 	q.Qtype = "SOA" // query for SOA and set DO (qmin-ish and may save a query or two)
 	q.DO = true     // try to get as much info as possible on the first try
 
-	//	for ip, name := range nslist {
-
 	// Check if the IP is already in the Delegation NS set of the zone
 	pid := slices.IndexFunc(z.ParentNS, func(ns ParentNS) bool {
 		return ns.IP == ip
@@ -314,9 +312,8 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 
 	q.Nameserver = ip
 	cfg.Log.Debug("Parent Query:", "Func", "QueryParentForDelegation", "query", q)
-	msg, err := dig.GetDelegation(q, cfg.Log)
+	msg, err := dig.SendQuery(q, cfg.Log)
 	if err != nil {
-		//cfg.Log.Error("DELEGATION: Error looking up domain", "domain", err.Error())
 		cfg.Log.Debug("Query Failed Trying next nameserver in list", "Func", "QueryParentForDelegation", "ERROR", err)
 		//continue
 	}
@@ -325,143 +322,12 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 
 		cfg.Log.Debug("DELEGATION: NOERROR", "Func", "QueryParentForDelegation", "QNAME", q.Qname, "server", q.Nameserver)
 
-		// Get info from Auth section
-		// Extract DNSSEC info, if any, and make a list of delegation
-		// Name Servers
 		var delegns []NSIP
-		for _, au := range msg.Authoritative {
+		delegns = z.ParseAuthSection(msg, pid, delegns)
 
-			// RDATA is in dns.RR.<section>[1:]
-			switch au.Rtype {
-			case "NS":
-				// create placeholder NS struct to put IP in later
-				name := au.GetRdata()
-				// Check if the name is already in the NSIP list of the zone
-				id := slices.IndexFunc(delegns, func(ns NSIP) bool {
-					return ns.Name == name
-				})
-				// If not, create ann entry and add it
-				if id < 0 {
-					var nsip NSIP
-					nsip.Name = name
-					delegns = append(delegns, nsip)
-				}
-				//z.ParentNS[pid].ChildStatus = 200
-			case "DS":
-				z.ParentNS[pid].DS = append(z.ParentNS[pid].DS, au.GetRdata())
-			case "RRSIG":
-				z.ParentNS[pid].RRSIG = append(z.ParentNS[pid].RRSIG, au.GetRdata())
-			case "SOA":
-				// NORROR + Authoritative answer + SOA in Authoritative section
-				// indicates that name in either a host name or an empty non-terminal
-				// Set statuses accordingly and make a note of true parent zone
-				z.ParentNS[pid].ChildStatus = 204
-				z.Status = 204
-				z.ZoneCut = au.Name
-				cfg.Log.Debug("[Parent] reported [Name] to be a part of [Zone]", "Func", "QueryParentForDelegation", "Parent", q.Nameserver, "Name", q.Qname, "Zone", au.Name)
+		delegns = z.ParseAdditionalSection(msg, delegns)
 
-			default:
-			}
-
-		}
-
-		// Get all glue that is provided, but dont trust it to be complete.
-		// This will save a few lookups further on
-		for _, e := range msg.Additional {
-			if e.Rtype == "A" || e.Rtype == "AAAA" {
-				// check if an identical entry exists
-				id := slices.IndexFunc(delegns, func(ns NSIP) bool {
-					return ns.IP == e.GetRdata() && ns.Name == e.Name
-				})
-				if id < 0 {
-					// check for entry with name but no IP
-					id := slices.IndexFunc(delegns, func(ns NSIP) bool {
-						return ns.Name == e.Name && ns.IP == ""
-					})
-
-					if id < 0 {
-						var nsip NSIP
-						nsip.IP = e.GetRdata()
-						nsip.Name = e.Name
-						delegns = append(delegns, nsip)
-					} else {
-						delegns[id].IP = e.GetRdata()
-					}
-				}
-			}
-		}
-
-		cfg.Log.Debug("CHecking NSIP list", "Func", "QueryParentForDelegation", "NS", q.Nameserver, "LIST", delegns)
-		// Go through the list of ns <-> ip and check if there is
-		// already an identical entry in the zones NSIP list.
-		// If so, add a reference. If not, add both entry and reference
-		for _, e := range delegns {
-			// No IP here means it was not in Glue.
-			if e.IP != "" {
-				id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
-					return ns.Name == e.Name && ns.IP == e.IP
-				})
-				if id < 0 {
-
-					var nsip NSIP
-					nsip.IP = e.IP
-					nsip.Name = e.Name
-					z.NSIP = append(z.NSIP, nsip)
-					// Since we don't know the index it got when
-					//inserted, we need to fetch it
-					id = slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
-						return ns.Name == e.Name && ns.IP == e.IP
-					})
-					cfg.Log.Debug("Match not found Adding new entry", "Func", "QueryParentForDelegation", "NSIP", nsip, "Index", id)
-				} else {
-					cfg.Log.Debug("Match found.", "Func", "QueryParentForDelegation", "NS", e.Name, "IP", e.IP, "Index", id)
-				}
-				z.ParentNS[pid].NS = append(z.ParentNS[pid].NS, int8(id))
-			} else {
-				cfg.Log.Debug("Match not found. Doing recursive lookup", "Func", "QueryParentForDelegation", "Name", e.Name)
-
-				var iplist []string
-				// Check if the name server is in the global cache
-				if server, ok := cfg.Cache.Get(e.Name); ok {
-					cfg.Log.Debug("NS in Global Cache", "Func", "QueryParentForDelegation", "Name", e.Name)
-					for _, ip := range server.IP {
-						iplist = append(iplist, ip)
-					}
-				}
-
-				if len(iplist) < 1 {
-					cfg.Log.Debug("NS NOT in global cache. Querying resolver.", "Func", "QueryParentForDelegation", "Name", e.Name)
-					// Cheat and use a resolver to get the IP(s) for the NS name
-					iplist, _ = dig.QndQuery(e.Name, cfg.GetResolver(), cfg.Log)
-					if len(iplist) > 0 {
-						server := Server{IP: iplist}
-						cfg.Cache.Set(e.Name, server)
-					}
-				}
-
-				for _, ip := range iplist {
-					// Even if the IP was not in the Glue for this NS
-					// it might have been added when processing another
-					// nameserver. Extra check just in case.
-					cfg.Log.Debug("IP-LIST for nameserver.", "Func", "QueryParentForDelegation", "Name", e.Name, "IP", ip)
-					id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
-						return ns.Name == e.Name && ns.IP == ip
-					})
-					if id < 0 {
-						cfg.Log.Debug("", "ID", id, "name", e.Name, "ip", ip)
-						var nsip NSIP
-						nsip.IP = ip
-						nsip.Name = e.Name
-						z.NSIP = append(z.NSIP, nsip)
-						id = slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
-							return ns.Name == e.Name && ns.IP == ip
-						})
-						cfg.Log.Debug("NS (still) not in list. Adding new entry", "Func", "QueryParentForDelegation", "NSIP", nsip, "Index", id)
-					}
-					z.ParentNS[pid].NS = append(z.ParentNS[pid].NS, int8(id))
-				}
-			}
-		}
+		z.UpdateZoneNSIP(delegns, pid, *cfg)
 
 		// If not already set, set Child Zone status at parent level to OK
 		if z.ParentNS[pid].ChildStatus == 0 {
@@ -485,6 +351,155 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 	}
 
 	return z.ParentNS[pid].ChildStatus
+}
+
+// ParseAuthSection
+//
+// Gets info from Auth section, extracts DNSSEC info, if any,
+// and make a list of delegation Name Servers
+func (z *Zone) ParseAuthSection(msg dig.DigData, pid int, delegns []NSIP) []NSIP {
+	for _, au := range msg.Authoritative {
+
+		// RDATA is in dns.RR.<section>[1:]
+		switch au.Rtype {
+		case "NS":
+			// create placeholder NS struct to put IP in later
+			name := au.GetRdata()
+			// Check if the name is already in the NSIP list of the zone
+			id := slices.IndexFunc(delegns, func(ns NSIP) bool {
+				return ns.Name == name
+			})
+			// If not, create ann entry and add it
+			if id < 0 {
+				var nsip NSIP
+				nsip.Name = name
+				delegns = append(delegns, nsip)
+			}
+			//z.ParentNS[pid].ChildStatus = 200
+		case "DS":
+			z.ParentNS[pid].DS = append(z.ParentNS[pid].DS, au.GetRdata())
+		case "RRSIG":
+			z.ParentNS[pid].RRSIG = append(z.ParentNS[pid].RRSIG, au.GetRdata())
+		case "SOA":
+			// NORROR + Authoritative answer + SOA in Authoritative section
+			// indicates that name in either a host name or an empty non-terminal
+			// Set statuses accordingly and make a note of true parent zone
+			z.ParentNS[pid].ChildStatus = 204
+			z.Status = 204
+			z.ZoneCut = au.Name
+
+		default:
+		}
+
+	}
+	return delegns
+}
+
+// ParseAdditionalSection
+//
+// Gets all glue that is provided, but doesn't trust it to be complete.
+// This will save a few lookups further on
+func (z *Zone) ParseAdditionalSection(msg dig.DigData, delegns []NSIP) []NSIP {
+
+	for _, e := range msg.Additional {
+		if e.Rtype == "A" || e.Rtype == "AAAA" {
+			// check if an identical entry exists
+			id := slices.IndexFunc(delegns, func(ns NSIP) bool {
+				return ns.IP == e.GetRdata() && ns.Name == e.Name
+			})
+			if id < 0 {
+				// check for entry with name but no IP
+				id := slices.IndexFunc(delegns, func(ns NSIP) bool {
+					return ns.Name == e.Name && ns.IP == ""
+				})
+
+				if id < 0 {
+					var nsip NSIP
+					nsip.IP = e.GetRdata()
+					nsip.Name = e.Name
+					delegns = append(delegns, nsip)
+				} else {
+					delegns[id].IP = e.GetRdata()
+				}
+			}
+		}
+	}
+	return delegns
+}
+
+// UpdateZoneNSIP
+//
+// Go through the []NSIP lidt and check if there is
+// already an identical entry in the zones NSIP list.
+// If so, add a reference. If not, add both entry and reference
+func (z *Zone) UpdateZoneNSIP(delegns []NSIP, pid int, cfg Config) {
+	for _, e := range delegns {
+		// No IP here means it was not in Glue.
+		if e.IP != "" {
+			id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
+				return ns.Name == e.Name && ns.IP == e.IP
+			})
+			if id < 0 {
+
+				var nsip NSIP
+				nsip.IP = e.IP
+				nsip.Name = e.Name
+				z.NSIP = append(z.NSIP, nsip)
+				// Since we don't know the index it got when
+				//inserted, we need to fetch it
+				id = slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
+					return ns.Name == e.Name && ns.IP == e.IP
+				})
+				cfg.Log.Debug("Match not found Adding new entry", "Func", "QueryParentForDelegation", "NSIP", nsip, "Index", id)
+			} else {
+				cfg.Log.Debug("Match found.", "Func", "QueryParentForDelegation", "NS", e.Name, "IP", e.IP, "Index", id)
+			}
+			z.ParentNS[pid].NS = append(z.ParentNS[pid].NS, int8(id))
+		} else {
+			cfg.Log.Debug("Match not found. Doing recursive lookup", "Func", "QueryParentForDelegation", "Name", e.Name)
+
+			var iplist []string
+			// Check if the name server is in the global cache
+			if server, ok := cfg.Cache.Get(e.Name); ok {
+				cfg.Log.Debug("NS in Global Cache", "Func", "QueryParentForDelegation", "Name", e.Name)
+				for _, ip := range server.IP {
+					iplist = append(iplist, ip)
+				}
+			}
+
+			if len(iplist) < 1 {
+				cfg.Log.Debug("NS NOT in global cache. Querying resolver.", "Func", "QueryParentForDelegation", "Name", e.Name)
+				// Cheat and use a resolver to get the IP(s) for the NS name
+				iplist, _ = dig.QndQuery(e.Name, cfg.GetResolver(), cfg.Log)
+				if len(iplist) > 0 {
+					server := Server{IP: iplist}
+					cfg.Cache.Set(e.Name, server)
+				}
+			}
+
+			for _, ip := range iplist {
+				// Even if the IP was not in the Glue for this NS
+				// it might have been added when processing another
+				// nameserver. Extra check just in case.
+				cfg.Log.Debug("IP-LIST for nameserver.", "Func", "QueryParentForDelegation", "Name", e.Name, "IP", ip)
+				id := slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
+					return ns.Name == e.Name && ns.IP == ip
+				})
+				if id < 0 {
+					cfg.Log.Debug("", "ID", id, "name", e.Name, "ip", ip)
+					var nsip NSIP
+					nsip.IP = ip
+					nsip.Name = e.Name
+					z.NSIP = append(z.NSIP, nsip)
+					id = slices.IndexFunc(z.NSIP, func(ns NSIP) bool {
+						return ns.Name == e.Name && ns.IP == ip
+					})
+					cfg.Log.Debug("NS (still) not in list. Adding new entry", "Func", "QueryParentForDelegation", "NSIP", nsip, "Index", id)
+				}
+				z.ParentNS[pid].NS = append(z.ParentNS[pid].NS, int8(id))
+			}
+		}
+	}
 }
 
 // QuerySelfForNS
@@ -521,7 +536,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 		q.Nameserver = nsip.IP
 
 		cfg.Log.Debug("SELF Query:", "query", q)
-		msg, err := dig.GetDelegation(q, cfg.Log)
+		msg, err := dig.SendQuery(q, cfg.Log)
 		if err != nil {
 			z.NSIP[i].ZoneStatus = 500
 			cfg.Log.Debug("Query Failed Trying next nameserver in list", "ERROR", err)
@@ -692,8 +707,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 
 			}
 
-			//If there is at least 1 working nameserver, aet zone tatus
-			// to OK
+			//If there is at least 1 working nameserver, set zone status to OK
 			z.Status = 200
 
 			// Sort the NS list for easier comparison later
@@ -722,6 +736,8 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 	return nil
 }
 
+// TODO: move to dig package
+/*
 func StripLabelFromLeft(z string) string {
 
 	var parent string
@@ -740,6 +756,7 @@ func StripLabelFromLeft(z string) string {
 func ToFQDN(name string) string {
 	return dns.Fqdn(name)
 }
+*/
 
 // DigPath
 //
