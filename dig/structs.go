@@ -1,13 +1,13 @@
 package dig
 
+// TODO Rename to query?
+
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
-	"time"
 
-	"github.com/miekg/dns"
+	"zonetree/logger"
 )
 
 type Query struct {
@@ -27,61 +27,30 @@ type Query struct {
 	ShowQuery  bool   `json:"ShowQuery"`
 	UDPsize    uint16 `json:"UDPsize"`
 	Tsig       string `json:"Tsig"`
+	SendQuery  func(Query, logger.Logger) (DigData, error)
 }
 
-type DigOut struct {
-	Qname      string        `json:"Qname"`
-	Query      *dns.Msg      `json:"Query"`    // message sent to name server
-	Response   *dns.Msg      `json:"Response"` // response from nameserver
-	RTT        time.Duration `json:"Round trip time"`
-	Nameserver string        `json:"Nameserver"` // Name server IP
-	QNSname    string        `json:"QNSname"`    // resolver name before translation
-	ShowQuery  bool          `json:"ShowQuery"`
-	MsgSize    int           `json:"Message Size"`
-	Transport  string        `json:"Transport"`
-}
-
+// Sanitize
+//
 // sanitize input data as precaution
 func (q *Query) Sanitize() {
 	q.Transport = strings.ToLower(q.Transport) // needs to be lower case.
 }
 
-/*
-func GetSystemResolver() string {
-	conf, err := dns.ClientConfigFromFile("/etc/resolv.conf")
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+// Send
+//
+// If no SendQuery function is set this will default to using
+// the general SendQuery (dig.Dig) function
+func (q *Query) Send(log logger.Logger) (DigData, error) {
+	if q.SendQuery == nil {
+		return SendQuery(*q, log)
 	}
-	ns := conf.Servers[0]
-	// Strip the [ and ] from around the nameserver obtained from /etc/resolv.conf
-	//ns = ns[1 : len(ns)-1]
-	return ns
-}
-*/
-
-func GetSystemResolver(ipver string) string {
-	conf, err := dns.ClientConfigFromFile("/etc/resolv.conf")
-	if err != nil {
-		//fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
-	}
-	// check for the first available server of right i version
-	var ns string
-	for _, ip := range conf.Servers {
-		ns = net.ParseIP(ip).String()
-		if ipver == "6" && strings.Contains(ns, ":") {
-			break
-		}
-		if ipver == "4" && strings.Contains(ns, ".") {
-			break
-		}
-
-	}
-	return ns
+	return q.SendQuery(*q, log)
 
 }
 
+// GetLookupNS
+//
 // Harmonize lookup nameserver to always use IP:Port
 // Check if valid IP. If not assume, hostname and look it up, selecting the first available ip
 // of correct version

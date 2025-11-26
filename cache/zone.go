@@ -312,7 +312,8 @@ func (z *Zone) QueryParentForDelegation(ip, name string, cfg *Config) int32 {
 
 	q.Nameserver = ip
 	cfg.Log.Debug("Parent Query:", "Func", "QueryParentForDelegation", "query", q)
-	msg, err := dig.SendQuery(q, cfg.Log)
+	//msg, err := dig.SendQuery(q, cfg.Log)
+	msg, err := q.Send(cfg.Log)
 	if err != nil {
 		cfg.Log.Debug("Query Failed Trying next nameserver in list", "Func", "QueryParentForDelegation", "ERROR", err)
 		//continue
@@ -429,7 +430,7 @@ func (z *Zone) ParseAdditionalSection(msg dig.DigData, delegns []NSIP) []NSIP {
 
 // UpdateZoneNSIP
 //
-// Go through the []NSIP lidt and check if there is
+// Go through the []NSIP list and check if there is
 // already an identical entry in the zones NSIP list.
 // If so, add a reference. If not, add both entry and reference
 func (z *Zone) UpdateZoneNSIP(delegns []NSIP, pid int, cfg Config) {
@@ -440,7 +441,6 @@ func (z *Zone) UpdateZoneNSIP(delegns []NSIP, pid int, cfg Config) {
 				return ns.Name == e.Name && ns.IP == e.IP
 			})
 			if id < 0 {
-
 				var nsip NSIP
 				nsip.IP = e.IP
 				nsip.Name = e.Name
@@ -470,7 +470,7 @@ func (z *Zone) UpdateZoneNSIP(delegns []NSIP, pid int, cfg Config) {
 			if len(iplist) < 1 {
 				cfg.Log.Debug("NS NOT in global cache. Querying resolver.", "Func", "QueryParentForDelegation", "Name", e.Name)
 				// Cheat and use a resolver to get the IP(s) for the NS name
-				iplist, _ = dig.QndQuery(e.Name, cfg.GetResolver(), cfg.Log)
+				iplist, _ = dig.ResolverQuery(e.Name, cfg.GetResolver(), cfg.Log)
 				if len(iplist) > 0 {
 					server := Server{IP: iplist}
 					cfg.Cache.Set(e.Name, server)
@@ -510,7 +510,6 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 
 	q := dig.NewQuery()
 	q.Qname = z.Name
-	// query for SOA and set DO (qmin-ish and may save a query or two)
 	q.Qtype = "NS"
 	q.DO = true
 
@@ -536,7 +535,8 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 		q.Nameserver = nsip.IP
 
 		cfg.Log.Debug("SELF Query:", "query", q)
-		msg, err := dig.SendQuery(q, cfg.Log)
+		//msg, err := dig.SendQuery(q, cfg.Log)
+		msg, err := q.Send(cfg.Log)
 		if err != nil {
 			z.NSIP[i].ZoneStatus = 500
 			cfg.Log.Debug("Query Failed Trying next nameserver in list", "ERROR", err)
@@ -586,7 +586,8 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 				}
 			}
 
-			// check if Zone cut is current zone
+			// check if Zone cut is current zone.
+			// AA-flag for NS + non-empty Answer + NOERROR = zone
 			if len(msg.Answer) > 0 {
 				cfg.Log.Debug("Zone Cut", "@", z.Name)
 				z.ZoneCut = z.Name
@@ -643,7 +644,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 
 				if DelegationInBailiwick(name, z.Name) {
 					cfg.Log.Debug("Making Biliwick Lookup", "Name", name)
-					iplist, err = dig.QndQuery(name, nsip.IP, cfg.Log)
+					iplist, err = dig.ResolverQuery(name, nsip.IP, cfg.Log)
 				}
 				if err != nil {
 					cfg.Log.Error("Error in Biliwick Lookup", "ERR", err)
@@ -666,7 +667,7 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 				// the NS name
 				if len(iplist) < 1 {
 					cfg.Log.Debug("Making Resolver Lookup", "Name", name)
-					iplist, _ = dig.QndQuery(name, cfg.GetResolver(), cfg.Log)
+					iplist, _ = dig.ResolverQuery(name, cfg.GetResolver(), cfg.Log)
 					// if this succeeds, save server in global cache
 					if len(iplist) > 0 {
 						server := Server{IP: iplist}
@@ -734,33 +735,4 @@ func (z *Zone) QuerySelfForNS(cfg *Config, QminFirstPath bool) error {
 	}
 
 	return nil
-}
-
-// TODO: move to dig package
-/*
-func StripLabelFromLeft(z string) string {
-
-	var parent string
-
-	// Split domain int labels and move up one step
-	labels := dns.SplitDomainName(z)
-	// ROOT is parent to itself and TLDs
-	if len(labels) < 2 {
-		parent = "."
-	} else {
-		parent = dns.Fqdn(strings.Join(labels[1:], "."))
-	}
-	return parent
-}
-
-func ToFQDN(name string) string {
-	return dns.Fqdn(name)
-}
-*/
-
-// DigPath
-//
-// Wrapper for dig.Path
-func DigPath(dom string) []string {
-	return dig.Path(dom)
 }

@@ -2,6 +2,8 @@ package dig
 
 import (
 	"github.com/miekg/dns"
+	"net"
+	"os"
 	"strings"
 )
 
@@ -31,6 +33,9 @@ func ToFQDN(name string) string {
 }
 
 // Path
+//
+// Returns a lookup path from root to leaf of the domain tree.
+// ["se","examples.se","www.examples.se"]
 func Path(dom string) []string {
 	var tree []string
 	dom = dns.Fqdn(dom)
@@ -42,4 +47,29 @@ func Path(dom string) []string {
 		}
 	}
 	return tree
+}
+
+// GetSystemResolver
+//
+// If there is a need to fall back on the system resolver
+func GetSystemResolver(ipver string) string {
+	conf, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+	if err != nil {
+		//fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+	// check for the first available server of right i version
+	var ns string
+	for _, ip := range conf.Servers {
+		ns = net.ParseIP(ip).String()
+		if ipver == "6" && strings.Contains(ns, ":") {
+			break
+		}
+		if ipver == "4" && strings.Contains(ns, ".") {
+			break
+		}
+
+	}
+	return ns
+
 }

@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"strconv"
+	"zonetree/dig"
 	"zonetree/logger"
 )
 
@@ -85,7 +86,7 @@ func (c *Config) DefaultOptions() {
 
 // Load
 //
-// Loads a YAML config file, ovverwriting default options.
+// Loads a YAML config file, overwriting default options.
 func (c *Config) Load(file string) error {
 
 	cf, err := os.ReadFile("profiles/" + file)
@@ -151,7 +152,7 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 
 	// Get a list of the parent zone nameservers to query for delegation data
 	// remove leftmost label to get name of parent zone
-	parentZoneName := StripLabelFromLeft(zone.Name)
+	parentZoneName := dig.StripLabelFromLeft(zone.Name)
 	nslist, zonecut, err := Nameservers(parentZoneName, cfg)
 	zone.ZoneCut = zonecut
 
@@ -175,7 +176,7 @@ func PrepZone(name string, cfg *Config) (Zone, error) {
 	// i.e. 420 it is (most likely) not a proper zone
 	// Re-use parents status for the child zone
 	if status == 420 {
-		if pz, ok := cfg.Zones.Get(StripLabelFromLeft(zone.Name)); ok {
+		if pz, ok := cfg.Zones.Get(dig.StripLabelFromLeft(zone.Name)); ok {
 			cfg.Log.Debug("Not proper zone. Re-using status from parent", "Zone", zone.Name, "Parent Zone Status", status)
 			status = pz.Status
 		}

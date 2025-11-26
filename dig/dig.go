@@ -11,7 +11,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-// func Dig(query Query) (DigOut, error) {
 func Dig(query Query) (dns.Msg, error) {
 
 	// Just to be safe, we sanitize data close to usage
@@ -110,7 +109,10 @@ func Dig(query Query) (dns.Msg, error) {
 	return *response, err
 }
 
-// Craft a placeholder responde here instead of panicking,
+// failure
+//
+// Craft a placeholder response instead of panicking,
+// and attach error message as EDE in message
 // to avoid nil pointer reference and stuff...
 func failure(err string) *dns.Msg {
 
@@ -140,7 +142,9 @@ func failure(err string) *dns.Msg {
 
 }
 
-// emulate the dig option +nocrypto
+// nocryptoMsg
+//
+// emulates the dig option +nocrypto
 func nocryptoMsg(in *dns.Msg) {
 	for i, answer := range in.Answer {
 		in.Answer[i] = nocryptoRR(answer)
@@ -153,6 +157,9 @@ func nocryptoMsg(in *dns.Msg) {
 	}
 }
 
+// nocryptoRR
+//
+// Remove crypto data from DNSSSEC record
 func nocryptoRR(r dns.RR) dns.RR {
 	switch t := r.(type) {
 	case *dns.DS:
@@ -170,7 +177,10 @@ func nocryptoRR(r dns.RR) dns.RR {
 	return r
 }
 
-// miekg/dns has a TYPE converter. This function is just to handle 'untyped' (TYPEXYZ) type values.
+// TypeToInt
+//
+// miekg/dns has a TYPE converter. This function is just to handle
+// 'untyped' (TYPEXYZ) type values.
 func TypeToInt(t string) uint16 {
 	var ti uint16
 	if strings.HasPrefix(t, "TYPE") {

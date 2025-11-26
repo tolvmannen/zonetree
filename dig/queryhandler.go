@@ -31,6 +31,10 @@ type DigRR struct {
 	Rdata []string
 }
 
+type QueryInterface interface {
+	Send(log logger.Logger) (DigData, error)
+}
+
 // GetRdata
 //
 // Returnd Rdata as one (1) space separated string
@@ -45,6 +49,9 @@ func (rr *DigRR) GetRdataFields() []string {
 	return rr.Rdata
 }
 
+// SendQuery
+//
+// Sends the prepared Query to the selected nameserver and returns
 func SendQuery(q Query, log logger.Logger) (DigData, error) {
 
 	var data DigData
@@ -103,12 +110,13 @@ func SendQuery(q Query, log logger.Logger) (DigData, error) {
 
 	}
 
-	//log.Debug(" -- this is what the Reply MSG looks like --", "MSG", data)
-
 	return data, err
 }
 
-func QndQuery(qname, resolver string, log logger.Logger) ([]string, error) {
+// ResolverQuery
+//
+// A (quick and dirty) way of getting nameserver addresses.
+func ResolverQuery(qname, resolver string, log logger.Logger) ([]string, error) {
 
 	var iplist []string
 
